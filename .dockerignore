@@ -1,0 +1,11 @@
+frontend-app/node_modules
+frontend-app/dist
+.git
+target
+uploads
+.kiro
+.vscode
+.impeccable
+.motion-lib
+.ui-skills
+*.pdf

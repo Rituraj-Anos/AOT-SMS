@@ -11,10 +11,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        // Tomcat deploys our WAR as /AOT-SMS/, so Vite forwards /api/* there.
-        target: 'http://127.0.0.1:8080',
+        target: process.env.VITE_API_BASE_URL || 'http://127.0.0.1:8080',
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/api/, '/AOT-SMS/api'),
+        rewrite: process.env.VITE_API_BASE_URL
+          ? (p) => p  // Production: no rewrite needed (app at root)
+          : (p) => p.replace(/^\/api/, '/AOT-SMS/api'),  // Local: Tomcat deploys as /AOT-SMS/
       },
     },
   },
