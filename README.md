@@ -124,7 +124,7 @@ Open **http://localhost:5173** — the Vite dev server proxies `/api` to Tomcat 
 |------|---------|----------|------|
 | Admin | `admin` | `Admin@AOT2026` | AOT Admin |
 | Teacher | `DKM` | `Teacher@123` | Prof. DKM |
-| Teacher | `RP` | `Teacher@123` | Prof. RP |
+| Teacher | `ND` | `Teacher@123` | Prof. ND |
 | Teacher | `ARD` | `Teacher@123` | Prof. ARD |
 | Teacher | `JC` | `Teacher@123` | Prof. JC |
 | Teacher | `SRJS` | `Teacher@123` | Prof. SRJS |
