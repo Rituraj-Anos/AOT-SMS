@@ -41,6 +41,15 @@ public class GradeServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         HttpUtil.applyCors(req, resp);
         try {
+            // Batch mode: returns summary for all students in a dept+semester (single query)
+            if ("batch".equals(req.getParameter("type"))) {
+                int deptId = Integer.parseInt(req.getParameter("deptId"));
+                int semester = Integer.parseInt(req.getParameter("semester"));
+                List<Map<String, Object>> results = getBatchResults(deptId, semester);
+                HttpUtil.writeOk(resp, results);
+                return;
+            }
+
             String idStr = req.getParameter("studentId");
             if (idStr == null) { HttpUtil.writeError(resp, 400, "studentId required"); return; }
             int studentId = Integer.parseInt(idStr);
@@ -99,5 +108,40 @@ public class GradeServlet extends HttpServlet {
         } catch (Exception e) {
             HttpUtil.writeError(resp, 500, "Failed to load grades: " + e.getMessage());
         }
+    }
+
+    /** Batch: get CGPA/backlog summary for all students in a dept+semester in ONE query. */
+    private List<Map<String, Object>> getBatchResults(int deptId, int semester) throws Exception {
+        String sql =
+            "SELECT s.student_id, s.roll_no, s.student_name, " +
+            "  sc.cgpa, sc.percentage, " +
+            "  (SELECT COUNT(*) FROM grades g WHERE g.student_id = s.student_id AND g.grade = 'F' AND g.is_backlog = TRUE AND g.backlog_cleared = FALSE) AS backlogs, " +
+            "  (SELECT MAX(g2.semester) FROM grades g2 WHERE g2.student_id = s.student_id) AS max_sem " +
+            "FROM students s " +
+            "LEFT JOIN sgpa_cgpa sc ON s.student_id = sc.student_id " +
+            "WHERE s.dept_id = ? AND s.current_semester = ? AND s.is_active = TRUE " +
+            "ORDER BY s.roll_no";
+        List<Map<String, Object>> out = new ArrayList<>();
+        try (Connection c = DBConnection.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, deptId); ps.setInt(2, semester);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("studentId", rs.getInt("student_id"));
+                    row.put("rollNo", rs.getString("roll_no"));
+                    row.put("studentName", rs.getString("student_name"));
+                    double cgpa = rs.getDouble("cgpa");
+                    row.put("cgpa", rs.wasNull() ? 0 : cgpa);
+                    double pct = rs.getDouble("percentage");
+                    row.put("percentage", rs.wasNull() ? 0 : pct);
+                    row.put("backlogs", rs.getInt("backlogs"));
+                    int maxSem = rs.getInt("max_sem");
+                    row.put("semestersDone", rs.wasNull() ? 0 : maxSem);
+                    out.add(row);
+                }
+            }
+        }
+        return out;
     }
 }

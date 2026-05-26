@@ -46,23 +46,41 @@ export default function AdminAttendanceView() {
   const depts    = useDepartments();
   const students = useStudents({ deptId: deptFilter, sem: semFilter });
 
-  // Single query that internally loops attendance summaries for visible students.
-  const studentIds = (students.data ?? []).map((s) => s.studentId);
+  // Single API call using fullsheet endpoint — returns all students × all subjects at once
   const summariesQuery = useQuery({
-    queryKey: ['attendance-batch', studentIds],
-    enabled: studentIds.length > 0,
+    queryKey: ['attendance-batch', deptFilter, semFilter],
+    enabled: (students.data ?? []).length > 0,
     queryFn: async () => {
+      const dId = deptFilter ?? 1;
+      const sem = semFilter ?? 4;
+      const r = await api.get<ApiResponse<any>>('/attendance', {
+        params: { type: 'fullsheet', deptId: dId, semester: sem },
+      });
+      const data = r.data.data;
+      if (!data || !data.rows) return {};
+      // Convert fullsheet rows into per-student AttendanceSummary format
       const out: Record<number, AttendanceSummary[]> = {};
-      // Sequential, bounded — no fan-out.
-      for (const id of studentIds) {
-        try {
-          const r = await api.get<ApiResponse<AttendanceSummary[]>>('/attendance', {
-            params: { studentId: id },
+      const subjects: { subjectId: number; subjectCode: string; subjectName: string; subjectType: string }[] = data.subjects ?? [];
+      for (const row of data.rows) {
+        const sid = row.studentId as number;
+        const summaries: AttendanceSummary[] = [];
+        for (const subj of subjects) {
+          if (subj.subjectType === 'training') continue;
+          const held = (row[`${subj.subjectCode}_held`] ?? 0) as number;
+          const present = (row[`${subj.subjectCode}_present`] ?? 0) as number;
+          const pct = (row[`${subj.subjectCode}_pct`] ?? 0) as number;
+          summaries.push({
+            subjectId: subj.subjectId,
+            subjectCode: subj.subjectCode,
+            subjectName: subj.subjectName ?? subj.subjectCode,
+            held,
+            present,
+            absent: held - present,
+            percent: pct,
+            classesNeededFor75: held > 0 && pct < 75 ? Math.ceil((0.75 * held - present) / 0.25) : 0,
           });
-          out[id] = r.data.data ?? [];
-        } catch {
-          out[id] = [];
         }
+        out[sid] = summaries;
       }
       return out;
     },

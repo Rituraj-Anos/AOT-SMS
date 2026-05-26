@@ -52,20 +52,25 @@ export default function AdminResults() {
   const depts    = useDepartments();
   const students = useStudents({ deptId: deptFilter, sem: semFilter });
 
-  // Single batched query — sequentially fetches result for visible students.
-  const studentIds = (students.data ?? []).map((s) => s.studentId);
+  // Single batch API call — gets all students' CGPA/backlogs in one query
   const resultsQuery = useQuery({
-    queryKey: ['results-batch', studentIds],
-    enabled: studentIds.length > 0,
+    queryKey: ['results-batch', deptFilter, semFilter],
+    enabled: (students.data ?? []).length > 0,
     queryFn: async () => {
-      const out: Record<number, ResultBundle | null> = {};
-      for (const id of studentIds) {
-        try {
-          const r = await api.get<ApiResponse<ResultBundle>>('/grades', { params: { studentId: id } });
-          out[id] = r.data.data;
-        } catch {
-          out[id] = null;
-        }
+      const dId = deptFilter ?? 1;
+      const sem = semFilter ?? 4;
+      const r = await api.get<ApiResponse<any[]>>('/grades', {
+        params: { type: 'batch', deptId: dId, semester: sem },
+      });
+      const rows = r.data.data ?? [];
+      const out: Record<number, { cgpa: number; percentage: number; backlogCount: number; sgpaBySemester: Record<string, number> }> = {};
+      for (const row of rows) {
+        out[row.studentId] = {
+          cgpa: row.cgpa ?? 0,
+          percentage: row.percentage ?? 0,
+          backlogCount: row.backlogs ?? 0,
+          sgpaBySemester: {},
+        };
       }
       return out;
     },
@@ -77,11 +82,10 @@ export default function AdminResults() {
     const map  = resultsQuery.data ?? {};
     return list.map((s) => {
       const r = map[s.studentId];
-      const cgpa       = r?.cgpa != null ? Number(r.cgpa) : null;
-      const percentage = r?.percentage != null ? Number(r.percentage) : null;
       return {
         student: s,
-        cgpa, percentage,
+        cgpa: r?.cgpa ?? null,
+        percentage: r?.percentage ?? null,
         backlogCount: r?.backlogCount ?? 0,
         sgpaBySemester: r?.sgpaBySemester ?? {},
       };
