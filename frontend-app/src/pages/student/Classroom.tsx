@@ -159,15 +159,14 @@ function MaterialCard({ material: m, studentId, onSubmit, onComment }:
               const base = import.meta.env.VITE_API_BASE_URL || '';
               fetch(`${base}/api/materials/download?id=${m.materialId}`, { credentials: 'include' })
                 .then((res) => {
-                  if (!res.ok) throw new Error('Failed');
+                  if (!res.ok) throw new Error(res.status === 404 ? 'File no longer available on server' : 'Failed');
                   return res.blob();
                 })
                 .then((blob) => {
-                  // Open in new tab for viewing (PDFs will render in browser)
                   const url = URL.createObjectURL(blob);
                   window.open(url, '_blank');
                 })
-                .catch(() => { /* handled */ });
+                .catch((e) => { toast.error(e.message || 'View failed'); });
             }}>
               <Eye className="h-3.5 w-3.5" /> View
             </Button>
@@ -175,7 +174,7 @@ function MaterialCard({ material: m, studentId, onSubmit, onComment }:
               const base = import.meta.env.VITE_API_BASE_URL || '';
               fetch(`${base}/api/materials/download?id=${m.materialId}`, { credentials: 'include' })
                 .then((res) => {
-                  if (!res.ok) throw new Error('Download failed');
+                  if (!res.ok) throw new Error(res.status === 404 ? 'File no longer available on server' : 'Download failed');
                   return res.blob();
                 })
                 .then((blob) => {
@@ -187,7 +186,7 @@ function MaterialCard({ material: m, studentId, onSubmit, onComment }:
                   a.remove();
                   URL.revokeObjectURL(a.href);
                 })
-                .catch(() => { /* handled */ });
+                .catch((e) => { toast.error(e.message || 'Download failed'); });
             }}>
               <Download className="h-3.5 w-3.5" /> Download
             </Button>
