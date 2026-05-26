@@ -15,12 +15,22 @@
 </p>
 
 <p align="center">
+  <a href="https://aot-sms.vercel.app"><strong>🌐 Live Demo</strong></a> ·
   <a href="#-features">Features</a> ·
   <a href="#-quick-start">Quick Start</a> ·
   <a href="#-tech-stack">Tech Stack</a> ·
   <a href="#-api-endpoints">API Docs</a> ·
   <a href="#-makaut-business-logic">MAKAUT Logic</a> ·
   <a href="#-contributing">Contributing</a>
+</p>
+
+<p align="center">
+  <a href="https://aot-sms.vercel.app">
+    <img src="https://img.shields.io/badge/Live_Demo-aot--sms.vercel.app-F97316?style=for-the-badge&logo=vercel&logoColor=white" />
+  </a>
+  <a href="https://aot-sms-backend.onrender.com/api/health">
+    <img src="https://img.shields.io/badge/Backend-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white" />
+  </a>
 </p>
 
 ---
