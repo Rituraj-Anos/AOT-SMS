@@ -178,6 +178,14 @@ export default function AdminAttendanceView() {
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: (row, _columnId, filterValue) => {
+      const s = filterValue.toLowerCase();
+      const r = row.original;
+      return (
+        r.student.rollNo.toLowerCase().includes(s) ||
+        r.student.studentName.toLowerCase().includes(s)
+      );
+    },
     getCoreRowModel:       getCoreRowModel(),
     getSortedRowModel:     getSortedRowModel(),
     getFilteredRowModel:   getFilteredRowModel(),
