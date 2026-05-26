@@ -40,13 +40,13 @@ CREATE TABLE IF NOT EXISTS submissions (
 
 -- Material Comments
 CREATE TABLE IF NOT EXISTS material_comments (
-  comment_id   INT AUTO_INCREMENT PRIMARY KEY,
-  material_id  INT NOT NULL,
-  user_role    ENUM('admin','teacher','student') NOT NULL,
-  user_id      INT NOT NULL,
-  user_name    VARCHAR(100) NOT NULL,
-  body         TEXT NOT NULL,
-  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  comment_id     INT AUTO_INCREMENT PRIMARY KEY,
+  material_id    INT NOT NULL,
+  posted_by_role ENUM('admin','teacher','student') NOT NULL,
+  posted_by_id   INT NOT NULL,
+  posted_by_name VARCHAR(100) NOT NULL,
+  comment_text   TEXT NOT NULL,
+  posted_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (material_id) REFERENCES study_materials(material_id) ON DELETE CASCADE
 );
 
