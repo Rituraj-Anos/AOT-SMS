@@ -41,10 +41,20 @@ public class MaterialServlet extends HttpServlet {
 
     private static final String UPLOAD_DIR = "uploads/materials";
     /**
-     * Persistent upload directory OUTSIDE the webapp so files survive WAR redeployments.
-     * Falls back to webapp-relative path if this doesn't exist.
+     * Upload directory — uses UPLOAD_PATH env var if set, otherwise /tmp/aot-uploads/materials
+     * on Linux (Render) or C:/coding/AOT-SMS/uploads/materials on Windows (local dev).
      */
-    private static final String PERSISTENT_UPLOAD_ROOT = "C:/coding/AOT-SMS/uploads/materials";
+    private static final String PERSISTENT_UPLOAD_ROOT;
+    static {
+        String envPath = System.getenv("UPLOAD_PATH");
+        if (envPath != null && !envPath.isBlank()) {
+            PERSISTENT_UPLOAD_ROOT = envPath + "/materials";
+        } else if (System.getProperty("os.name", "").toLowerCase().contains("win")) {
+            PERSISTENT_UPLOAD_ROOT = "C:/coding/AOT-SMS/uploads/materials";
+        } else {
+            PERSISTENT_UPLOAD_ROOT = "/tmp/aot-uploads/materials";
+        }
+    }
     private final MaterialDAO dao = new MaterialDAO();
 
     private String getUploadDir() {

@@ -40,7 +40,17 @@ import java.util.UUID;
 public class SubmissionServlet extends HttpServlet {
 
     private static final String UPLOAD_DIR = "uploads/submissions";
-    private static final String PERSISTENT_UPLOAD_ROOT = "C:/coding/AOT-SMS/uploads/submissions";
+    private static final String PERSISTENT_UPLOAD_ROOT;
+    static {
+        String envPath = System.getenv("UPLOAD_PATH");
+        if (envPath != null && !envPath.isBlank()) {
+            PERSISTENT_UPLOAD_ROOT = envPath + "/submissions";
+        } else if (System.getProperty("os.name", "").toLowerCase().contains("win")) {
+            PERSISTENT_UPLOAD_ROOT = "C:/coding/AOT-SMS/uploads/submissions";
+        } else {
+            PERSISTENT_UPLOAD_ROOT = "/tmp/aot-uploads/submissions";
+        }
+    }
     private final SubmissionDAO dao = new SubmissionDAO();
 
     private String getUploadDir() {
