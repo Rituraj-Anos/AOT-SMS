@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+                             https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0"
+         metadata-complete="false">
+
+  <display-name>AOT Student Management System</display-name>
+
+  <!--
+    All servlets and the JWT filter are declared via @WebServlet / @WebFilter
+    annotations. metadata-complete="false" tells Tomcat to scan them.
+
+    Endpoints:
+      /api/auth/login   /api/auth/logout   /api/auth/me
+      /api/health
+      /api/departments  /api/subjects
+      /api/students     /api/teachers
+      /api/attendance   /api/marks         /api/grades
+      /api/fees         /api/notices
+      /api/reports
+  -->
+
+  <session-config>
+    <session-timeout>240</session-timeout>
+    <cookie-config>
+      <http-only>true</http-only>
+      <same-site>Lax</same-site>
+    </cookie-config>
+  </session-config>
+
+  <error-page>
+    <error-code>404</error-code>
+    <location>/index.html</location>
+  </error-page>
+</web-app>
