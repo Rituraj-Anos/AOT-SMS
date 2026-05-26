@@ -8,6 +8,16 @@
 
   <display-name>AOT Student Management System</display-name>
 
+  <!-- CORS filter must run BEFORE JWT filter so preflight OPTIONS gets 200 without auth -->
+  <filter>
+    <filter-name>CORSFilter</filter-name>
+    <filter-class>com.aot.sms.filter.CORSFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>CORSFilter</filter-name>
+    <url-pattern>/api/*</url-pattern>
+  </filter-mapping>
+
   <!--
     All servlets and the JWT filter are declared via @WebServlet / @WebFilter
     annotations. metadata-complete="false" tells Tomcat to scan them.

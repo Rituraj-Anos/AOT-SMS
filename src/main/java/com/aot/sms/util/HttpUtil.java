@@ -42,11 +42,13 @@ public final class HttpUtil {
     }
 
     public static void applyCors(HttpServletRequest req, HttpServletResponse resp) {
+        // Skip if CORSFilter already set the headers
+        if (resp.getHeader("Access-Control-Allow-Origin") != null) return;
+
         String origin = req.getHeader("Origin");
         if (isAllowedOrigin(origin)) {
             resp.setHeader("Access-Control-Allow-Origin", origin);
         } else if (origin != null) {
-            // Don't set header for unknown origins — browser will block
             resp.setHeader("Access-Control-Allow-Origin", "https://aot-sms.vercel.app");
         }
         resp.setHeader("Vary", "Origin");
