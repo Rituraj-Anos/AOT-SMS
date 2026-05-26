@@ -154,11 +154,26 @@ function MaterialCard({ material: m, studentId, onSubmit, onComment }:
       {m.description && <p className="text-sm text-muted-foreground mb-3">{m.description}</p>}
       <div className="flex items-center gap-2 flex-wrap">
         {m.fileName && (
-          <a href={`/api/materials/download?id=${m.materialId}`} target="_blank" rel="noopener noreferrer">
-            <Button size="sm" variant="secondary">
-              <Download className="h-3.5 w-3.5" /> Download
-            </Button>
-          </a>
+          <Button size="sm" variant="secondary" onClick={() => {
+            const base = import.meta.env.VITE_API_BASE_URL || '';
+            fetch(`${base}/api/materials/download?id=${m.materialId}`, { credentials: 'include' })
+              .then((res) => {
+                if (!res.ok) throw new Error('Download failed');
+                return res.blob();
+              })
+              .then((blob) => {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = m.fileName || 'file';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(a.href);
+              })
+              .catch(() => { /* handled */ });
+          }}>
+            <Download className="h-3.5 w-3.5" /> Download
+          </Button>
         )}
         {m.materialType === 'assignment' && !mySub.data && (
           <Button size="sm" onClick={onSubmit}>

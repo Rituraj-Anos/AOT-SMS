@@ -190,7 +190,23 @@ export default function AdminAttendanceView() {
     if (deptFilter) params.set('deptId', String(deptFilter));
     if (semFilter)  params.set('sem',    String(semFilter));
     const base = import.meta.env.VITE_API_BASE_URL || '';
-    window.open(`${base}/api/reports?${params.toString()}`, '_blank');
+    const url = `${base}/api/reports?${params.toString()}`;
+    // Use fetch with credentials (window.open won't send cookies cross-origin)
+    fetch(url, { credentials: 'include' })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.blob();
+      })
+      .then((blob) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'attendance_report.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+      })
+      .catch(() => { /* toast handled by axios interceptor */ });
   }
 
   const isAnyLoading = students.isLoading || summariesQuery.isLoading;

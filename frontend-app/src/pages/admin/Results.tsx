@@ -199,7 +199,22 @@ export default function AdminResults() {
 
   function exportCsv() {
     const base = import.meta.env.VITE_API_BASE_URL || '';
-    window.open(`${base}/api/reports?type=marks${semFilter ? `&sem=${semFilter}` : ''}`, '_blank');
+    const url = `${base}/api/reports?type=marks${semFilter ? `&sem=${semFilter}` : ''}`;
+    fetch(url, { credentials: 'include' })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.blob();
+      })
+      .then((blob) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'marks_report.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+      })
+      .catch(() => { /* error handled silently */ });
   }
 
   const isAnyLoading = students.isLoading || resultsQuery.isLoading;
