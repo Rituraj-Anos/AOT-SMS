@@ -94,6 +94,20 @@ public class SubmissionDAO {
         }
     }
 
+    /** Get a single submission by ID (for download). */
+    public Map<String, Object> getSubmissionById(int submissionId) throws SQLException {
+        String sql = "SELECT sub.*, s.roll_no, s.student_name FROM submissions sub " +
+                     "JOIN students s ON sub.student_id = s.student_id " +
+                     "WHERE sub.submission_id = ?";
+        try (Connection c = DBConnection.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, submissionId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? mapRow(rs) : null;
+            }
+        }
+    }
+
     private Map<String, Object> mapRow(ResultSet rs) throws SQLException {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("submissionId", rs.getInt("submission_id"));

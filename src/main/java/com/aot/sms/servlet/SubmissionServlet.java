@@ -31,7 +31,7 @@ import java.util.UUID;
  *   GET    /api/submissions?materialId=X&studentId=Y  — student's own submission
  *   PUT    /api/submissions          — grade a submission (JSON: submissionId, grade, feedback)
  */
-@WebServlet("/api/submissions")
+@WebServlet({"/api/submissions", "/api/submissions/download"})
 @MultipartConfig(
     fileSizeThreshold = 1024 * 1024,
     maxFileSize       = 50 * 1024 * 1024,
@@ -67,6 +67,13 @@ public class SubmissionServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         HttpUtil.applyCors(req, resp);
+
+        // Download mode
+        if ("/api/submissions/download".equals(req.getServletPath())) {
+            downloadSubmission(req, resp);
+            return;
+        }
+
         try {
             String materialIdStr = req.getParameter("materialId");
             String studentIdStr  = req.getParameter("studentId");
@@ -161,6 +168,43 @@ public class SubmissionServlet extends HttpServlet {
             HttpUtil.writeOk(resp, null, "Graded successfully");
         } catch (Exception e) {
             HttpUtil.writeError(resp, 500, "Grading failed: " + e.getMessage());
+        }
+    }
+
+    private void downloadSubmission(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        try {
+            String idStr = req.getParameter("id");
+            if (idStr == null) { HttpUtil.writeError(resp, 400, "id required"); return; }
+            int submissionId = Integer.parseInt(idStr);
+
+            // Get submission record
+            Map<String, Object> sub = dao.getSubmissionById(submissionId);
+            if (sub == null || sub.get("filePath") == null) {
+                HttpUtil.writeError(resp, 404, "Submission file not found");
+                return;
+            }
+
+            String relativePath = (String) sub.get("filePath");
+            String storedName = relativePath.replace("uploads/submissions/", "");
+            java.nio.file.Path path = java.nio.file.Paths.get(getUploadDir(), storedName);
+
+            if (!java.nio.file.Files.exists(path)) {
+                // Try webapp-relative fallback
+                String webappPath = getServletContext().getRealPath("") + java.io.File.separator + relativePath;
+                path = java.nio.file.Paths.get(webappPath);
+                if (!java.nio.file.Files.exists(path)) {
+                    HttpUtil.writeError(resp, 404, "File missing from disk");
+                    return;
+                }
+            }
+
+            String fileName = (String) sub.get("fileName");
+            resp.setContentType("application/octet-stream");
+            resp.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+            resp.setContentLengthLong(java.nio.file.Files.size(path));
+            java.nio.file.Files.copy(path, resp.getOutputStream());
+        } catch (Exception e) {
+            HttpUtil.writeError(resp, 500, "Download failed: " + e.getMessage());
         }
     }
 

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  FileText, Upload, Trash2, Loader2, Pin, Eye, Calendar, Paperclip, MessageCircle,
+  FileText, Upload, Trash2, Loader2, Pin, Eye, Calendar, Paperclip, MessageCircle, Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -278,6 +278,23 @@ function SubmissionsSheet({ material, open, onOpenChange }:
                 Submitted: {formatDate(s.submittedAt)}
                 {s.fileName && <span className="ml-2">· 📎 {s.fileName}</span>}
               </div>
+              {s.fileName && (
+                <Button size="sm" variant="secondary" className="mb-2" onClick={() => {
+                  const base = import.meta.env.VITE_API_BASE_URL || '';
+                  fetch(`${base}/api/submissions/download?id=${s.submissionId}`, { credentials: 'include' })
+                    .then((res) => { if (!res.ok) throw new Error('Download failed'); return res.blob(); })
+                    .then((blob) => {
+                      const a = document.createElement('a');
+                      a.href = URL.createObjectURL(blob);
+                      a.download = s.fileName || 'submission';
+                      document.body.appendChild(a); a.click(); a.remove();
+                      URL.revokeObjectURL(a.href);
+                    })
+                    .catch(() => {});
+                }}>
+                  <Download className="h-3.5 w-3.5" /> Download File
+                </Button>
+              )}
               {s.status === 'graded' ? (
                 <div className="text-sm"><strong>Grade:</strong> {s.grade} {s.feedback && <span className="text-muted-foreground">— {s.feedback}</span>}</div>
               ) : (
