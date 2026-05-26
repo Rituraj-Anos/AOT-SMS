@@ -1034,7 +1034,9 @@ function FullSheetExportCard() {
 // helpers
 // ─────────────────────────────────────────────────────────────────────
 async function streamDownload(url: string, fileName: string) {
-  const res = await fetch(url, { credentials: 'include' });
+  const base = import.meta.env.VITE_API_BASE_URL || '';
+  const fullUrl = url.startsWith('/api') ? `${base}${url}` : url;
+  const res = await fetch(fullUrl, { credentials: 'include' });
   if (!res.ok) {
     let msg = `HTTP ${res.status}`;
     try { const j = await res.json(); msg = j.message || msg; } catch { /* ignore */ }

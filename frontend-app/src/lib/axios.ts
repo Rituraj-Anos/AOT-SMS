@@ -3,11 +3,16 @@ import { toast } from 'sonner';
 
 /**
  * Centralised axios instance.
- * The Servlet backend sets a JWT in an httpOnly cookie, so every request
- * must send credentials. Vite proxies /api → http://localhost:8080/AOT-SMS/api.
+ *
+ * In development: baseURL = '/api' (Vite proxy forwards to local Tomcat)
+ * In production:  baseURL = VITE_API_BASE_URL + '/api' (e.g. https://aot-sms-backend.onrender.com/api)
  */
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL}/api`
+  : '/api';
+
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL: BASE_URL,
   withCredentials: true,
   timeout: 15_000,
 });

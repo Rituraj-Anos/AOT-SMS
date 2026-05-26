@@ -393,7 +393,8 @@ function NewFeeDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
   async function onSubmit(v: NewFeeVals) {
     try {
       // Inline lookup: GET /students?rollNo=X
-      const lookup = await fetch(`/api/students?rollNo=${encodeURIComponent(v.rollNo)}`, {
+      const base = import.meta.env.VITE_API_BASE_URL || '';
+      const lookup = await fetch(`${base}/api/students?rollNo=${encodeURIComponent(v.rollNo)}`, {
         credentials: 'include',
       }).then((r) => r.json());
       const student = lookup?.data;
