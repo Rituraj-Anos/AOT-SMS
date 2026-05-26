@@ -157,10 +157,11 @@ function MaterialCard({ material: m, studentId, onSubmit, onComment }:
           <>
             <Button size="sm" variant="secondary" onClick={() => {
               const base = import.meta.env.VITE_API_BASE_URL || '';
-              fetch(`${base}/api/materials/download?id=${m.materialId}`, { credentials: 'include' })
+              fetch(`${base}/api/materials/download?id=${m.materialId}&view=true`, { credentials: 'include' })
                 .then((res) => {
                   if (!res.ok) throw new Error(res.status === 404 ? 'File no longer available on server' : 'Failed');
-                  return res.blob();
+                  const contentType = res.headers.get('Content-Type') || 'application/pdf';
+                  return res.blob().then((b) => new Blob([b], { type: contentType }));
                 })
                 .then((blob) => {
                   const url = URL.createObjectURL(blob);

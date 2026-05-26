@@ -216,8 +216,30 @@ public class MaterialServlet extends HttpServlet {
             }
 
             String fileName = (String) m.get("fileName");
-            resp.setContentType("application/octet-stream");
-            resp.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+            boolean viewMode = "true".equalsIgnoreCase(req.getParameter("view"));
+
+            // Determine content type from file extension
+            String contentType = "application/octet-stream";
+            if (fileName != null) {
+                String lower = fileName.toLowerCase();
+                if (lower.endsWith(".pdf")) contentType = "application/pdf";
+                else if (lower.endsWith(".png")) contentType = "image/png";
+                else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) contentType = "image/jpeg";
+                else if (lower.endsWith(".gif")) contentType = "image/gif";
+                else if (lower.endsWith(".txt")) contentType = "text/plain";
+                else if (lower.endsWith(".html")) contentType = "text/html";
+                else if (lower.endsWith(".doc") || lower.endsWith(".docx")) contentType = "application/msword";
+                else if (lower.endsWith(".ppt") || lower.endsWith(".pptx")) contentType = "application/vnd.ms-powerpoint";
+            }
+
+            resp.setContentType(contentType);
+            if (viewMode) {
+                // Inline display (browser renders PDF/images)
+                resp.setHeader("Content-Disposition", "inline; filename=\"" + fileName + "\"");
+            } else {
+                // Force download
+                resp.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+            }
             resp.setContentLengthLong(Files.size(path));
             Files.copy(path, resp.getOutputStream());
         } catch (Exception e) {
