@@ -198,7 +198,8 @@ export default function AdminResults() {
   });
 
   function exportCsv() {
-    window.open(`/api/reports?type=marks${semFilter ? `&sem=${semFilter}` : ''}`, '_blank');
+    const base = import.meta.env.VITE_API_BASE_URL || '';
+    window.open(`${base}/api/reports?type=marks${semFilter ? `&sem=${semFilter}` : ''}`, '_blank');
   }
 
   const isAnyLoading = students.isLoading || resultsQuery.isLoading;

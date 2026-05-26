@@ -189,8 +189,8 @@ export default function AdminAttendanceView() {
     const params = new URLSearchParams({ type: 'attendance' });
     if (deptFilter) params.set('deptId', String(deptFilter));
     if (semFilter)  params.set('sem',    String(semFilter));
-    // Tomcat WAR context — same path the dev proxy rewrites under the hood
-    window.open(`/api/reports?${params.toString()}`, '_blank');
+    const base = import.meta.env.VITE_API_BASE_URL || '';
+    window.open(`${base}/api/reports?${params.toString()}`, '_blank');
   }
 
   const isAnyLoading = students.isLoading || summariesQuery.isLoading;
