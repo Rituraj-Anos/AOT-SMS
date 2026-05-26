@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  FileText, Download, Loader2, Pin, Calendar, Paperclip, Upload, CheckCircle2, MessageCircle,
+  FileText, Download, Loader2, Pin, Calendar, Paperclip, Upload, CheckCircle2, MessageCircle, Eye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -154,26 +154,44 @@ function MaterialCard({ material: m, studentId, onSubmit, onComment }:
       {m.description && <p className="text-sm text-muted-foreground mb-3">{m.description}</p>}
       <div className="flex items-center gap-2 flex-wrap">
         {m.fileName && (
-          <Button size="sm" variant="secondary" onClick={() => {
-            const base = import.meta.env.VITE_API_BASE_URL || '';
-            fetch(`${base}/api/materials/download?id=${m.materialId}`, { credentials: 'include' })
-              .then((res) => {
-                if (!res.ok) throw new Error('Download failed');
-                return res.blob();
-              })
-              .then((blob) => {
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = m.fileName || 'file';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                URL.revokeObjectURL(a.href);
-              })
-              .catch(() => { /* handled */ });
-          }}>
-            <Download className="h-3.5 w-3.5" /> Download
-          </Button>
+          <>
+            <Button size="sm" variant="secondary" onClick={() => {
+              const base = import.meta.env.VITE_API_BASE_URL || '';
+              fetch(`${base}/api/materials/download?id=${m.materialId}`, { credentials: 'include' })
+                .then((res) => {
+                  if (!res.ok) throw new Error('Failed');
+                  return res.blob();
+                })
+                .then((blob) => {
+                  // Open in new tab for viewing (PDFs will render in browser)
+                  const url = URL.createObjectURL(blob);
+                  window.open(url, '_blank');
+                })
+                .catch(() => { /* handled */ });
+            }}>
+              <Eye className="h-3.5 w-3.5" /> View
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => {
+              const base = import.meta.env.VITE_API_BASE_URL || '';
+              fetch(`${base}/api/materials/download?id=${m.materialId}`, { credentials: 'include' })
+                .then((res) => {
+                  if (!res.ok) throw new Error('Download failed');
+                  return res.blob();
+                })
+                .then((blob) => {
+                  const a = document.createElement('a');
+                  a.href = URL.createObjectURL(blob);
+                  a.download = m.fileName || 'file';
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  URL.revokeObjectURL(a.href);
+                })
+                .catch(() => { /* handled */ });
+            }}>
+              <Download className="h-3.5 w-3.5" /> Download
+            </Button>
+          </>
         )}
         {m.materialType === 'assignment' && !mySub.data && (
           <Button size="sm" onClick={onSubmit}>
