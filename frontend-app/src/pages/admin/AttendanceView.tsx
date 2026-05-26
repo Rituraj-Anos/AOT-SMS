@@ -47,8 +47,7 @@ export default function AdminAttendanceView() {
   const students = useStudents({ deptId: deptFilter, sem: semFilter });
 
   // Single query that internally loops attendance summaries for visible students.
-  // Hard-capped at 30 students so we don't hammer the backend.
-  const studentIds = (students.data ?? []).slice(0, 30).map((s) => s.studentId);
+  const studentIds = (students.data ?? []).map((s) => s.studentId);
   const summariesQuery = useQuery({
     queryKey: ['attendance-batch', studentIds],
     enabled: studentIds.length > 0,
@@ -71,7 +70,7 @@ export default function AdminAttendanceView() {
   });
 
   const rows: AttendanceRow[] = useMemo(() => {
-    const list = (students.data ?? []).slice(0, 30);
+    const list = students.data ?? [];
     const map  = summariesQuery.data ?? {};
     return list.map((s) => {
       const summary = map[s.studentId] ?? [];

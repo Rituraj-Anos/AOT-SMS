@@ -53,8 +53,7 @@ export default function AdminResults() {
   const students = useStudents({ deptId: deptFilter, sem: semFilter });
 
   // Single batched query — sequentially fetches result for visible students.
-  // Hard-cap at 30 to keep things responsive.
-  const studentIds = (students.data ?? []).slice(0, 30).map((s) => s.studentId);
+  const studentIds = (students.data ?? []).map((s) => s.studentId);
   const resultsQuery = useQuery({
     queryKey: ['results-batch', studentIds],
     enabled: studentIds.length > 0,
@@ -74,7 +73,7 @@ export default function AdminResults() {
   });
 
   const rows: ResultsRow[] = useMemo(() => {
-    const list = (students.data ?? []).slice(0, 30);
+    const list = students.data ?? [];
     const map  = resultsQuery.data ?? {};
     return list.map((s) => {
       const r = map[s.studentId];
@@ -190,6 +189,14 @@ export default function AdminResults() {
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: (row, _columnId, filterValue) => {
+      const s = filterValue.toLowerCase();
+      const r = row.original;
+      return (
+        r.student.rollNo.toLowerCase().includes(s) ||
+        r.student.studentName.toLowerCase().includes(s)
+      );
+    },
     getCoreRowModel:       getCoreRowModel(),
     getSortedRowModel:     getSortedRowModel(),
     getFilteredRowModel:   getFilteredRowModel(),
