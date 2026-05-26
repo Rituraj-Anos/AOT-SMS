@@ -61,12 +61,23 @@ export function SidebarContents({ onItemClick }: { onItemClick?: () => void }) {
     <div className="flex flex-col h-full">
       {/* Brand */}
       <div className="px-5 pt-6 pb-5 border-b border-border flex items-center gap-3">
-        <div className="h-9 w-9 rounded-lg bg-gradient-brand text-white grid place-items-center font-extrabold shadow-orange">
-          AOT
+        <div className="h-10 w-10 rounded-xl bg-gradient-brand text-white grid place-items-center shadow-orange overflow-hidden">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 w-10">
+            <rect width="40" height="40" rx="10" fill="url(#grad)" />
+            <path d="M12 28L20 10L28 28" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M14.5 23H25.5" stroke="white" strokeWidth="2" strokeLinecap="round" />
+            <circle cx="20" cy="30" r="2" fill="white" opacity="0.7" />
+            <defs>
+              <linearGradient id="grad" x1="0" y1="0" x2="40" y2="40">
+                <stop stopColor="#F97316" />
+                <stop offset="1" stopColor="#EA580C" />
+              </linearGradient>
+            </defs>
+          </svg>
         </div>
         <div>
-          <div className="font-extrabold leading-tight">AOT SMS</div>
-          <div className="text-[11px] text-muted-foreground capitalize">{me.role} console</div>
+          <div className="font-extrabold leading-tight text-[15px]">AOT SMS</div>
+          <div className="text-[10px] text-muted-foreground capitalize tracking-wide">{me.role} Console</div>
         </div>
       </div>
 
