@@ -6,30 +6,48 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Set;
 
 /**
  * Common HTTP helpers used across servlets:
- *  • CORS for the React dev server (http://localhost:5173) with credentials
+ *  • CORS for React frontend (local dev + production) with credentials
  *  • JSON write helpers
  *  • Cookie reader
  */
 public final class HttpUtil {
 
     /**
-     * The single allowed origin for credentialed requests. The CORS spec
-     * forbids "*" with Allow-Credentials: true, so we echo this exact value.
+     * Allowed origins for credentialed CORS requests.
+     * The CORS spec forbids "*" with Allow-Credentials: true,
+     * so we echo the exact requesting origin if it's in our whitelist.
      */
-    public static final String ALLOWED_ORIGIN = System.getenv()
-            .getOrDefault("APP_CORS_ORIGIN", "http://localhost:5173");
+    private static final Set<String> ALLOWED_ORIGINS = Set.of(
+        "http://localhost:5173",
+        "http://localhost:4173",
+        "https://aot-sms.vercel.app"
+    );
+
+    /** Extra origin from env var (e.g. custom domain). */
+    private static final String EXTRA_ORIGIN = System.getenv("APP_CORS_ORIGIN");
 
     private HttpUtil() {}
 
+    private static boolean isAllowedOrigin(String origin) {
+        if (origin == null) return false;
+        if (ALLOWED_ORIGINS.contains(origin)) return true;
+        if (EXTRA_ORIGIN != null && EXTRA_ORIGIN.equals(origin)) return true;
+        // Allow any *.vercel.app subdomain for preview deployments
+        if (origin.endsWith(".vercel.app") && origin.startsWith("https://")) return true;
+        return false;
+    }
+
     public static void applyCors(HttpServletRequest req, HttpServletResponse resp) {
         String origin = req.getHeader("Origin");
-        if (origin != null && (origin.equals(ALLOWED_ORIGIN) || origin.equals("http://localhost:4173"))) {
+        if (isAllowedOrigin(origin)) {
             resp.setHeader("Access-Control-Allow-Origin", origin);
-        } else {
-            resp.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+        } else if (origin != null) {
+            // Don't set header for unknown origins — browser will block
+            resp.setHeader("Access-Control-Allow-Origin", "https://aot-sms.vercel.app");
         }
         resp.setHeader("Vary", "Origin");
         resp.setHeader("Access-Control-Allow-Credentials", "true");
@@ -40,7 +58,7 @@ public final class HttpUtil {
         resp.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
     }
 
-    /** OPTIONS preflight responder — returns true when handled. */
+    /** OPTIONS preflight responder. */
     public static boolean handlePreflight(HttpServletRequest req, HttpServletResponse resp) {
         if ("OPTIONS".equalsIgnoreCase(req.getMethod())) {
             applyCors(req, resp);
@@ -81,22 +99,47 @@ public final class HttpUtil {
         return null;
     }
 
-    /** Build the JWT cookie. */
+    /**
+     * Build the JWT cookie.
+     * In production (cross-origin HTTPS), we need SameSite=None + Secure.
+     * In local dev (same-origin HTTP), SameSite=Lax is fine.
+     */
     public static Cookie buildAuthCookie(String token, int maxAgeSeconds) {
         Cookie c = new Cookie(JWTUtil.COOKIE_NAME, token);
         c.setHttpOnly(true);
         c.setPath("/");
         c.setMaxAge(maxAgeSeconds);
-        // SameSite=Lax via header workaround — Servlet 6 still lacks setAttribute("SameSite")
-        // We rely on Tomcat's default SameSite handling (LegacyCookieProcessor) or set it on response below.
+        c.setSecure(isProduction());
         return c;
     }
 
+    /**
+     * Add Set-Cookie header manually to include SameSite attribute
+     * (Jakarta Servlet 6 Cookie API doesn't support SameSite directly).
+     */
+    public static void addAuthCookieWithSameSite(HttpServletResponse resp, String token, int maxAgeSeconds) {
+        String sameSite = isProduction() ? "None" : "Lax";
+        String secure = isProduction() ? "; Secure" : "";
+        String header = String.format(
+            "%s=%s; Path=/; Max-Age=%d; HttpOnly%s; SameSite=%s",
+            JWTUtil.COOKIE_NAME, token, maxAgeSeconds, secure, sameSite
+        );
+        resp.addHeader("Set-Cookie", header);
+    }
+
     public static void clearAuthCookie(HttpServletResponse resp) {
-        Cookie c = new Cookie(JWTUtil.COOKIE_NAME, "");
-        c.setHttpOnly(true);
-        c.setPath("/");
-        c.setMaxAge(0);
-        resp.addCookie(c);
+        String sameSite = isProduction() ? "None" : "Lax";
+        String secure = isProduction() ? "; Secure" : "";
+        String header = String.format(
+            "%s=; Path=/; Max-Age=0; HttpOnly%s; SameSite=%s",
+            JWTUtil.COOKIE_NAME, secure, sameSite
+        );
+        resp.addHeader("Set-Cookie", header);
+    }
+
+    private static boolean isProduction() {
+        // If DB_SSL is set to true, we're in production (Aiven cloud DB)
+        String ssl = System.getenv("DB_SSL");
+        return "true".equalsIgnoreCase(ssl);
     }
 }

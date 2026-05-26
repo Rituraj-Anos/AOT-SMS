@@ -12,7 +12,6 @@ import com.aot.sms.util.JSONUtil;
 import com.aot.sms.util.JWTUtil;
 
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -188,10 +187,9 @@ public class AuthServlet extends HttpServlet {
                 return;
             }
 
-            // Issue JWT and set cookie
+            // Issue JWT and set cookie (with SameSite for cross-origin production)
             String token = JWTUtil.issue(userId, role, displayName, entityId);
-            Cookie cookie = HttpUtil.buildAuthCookie(token, (int) JWTUtil.ACCESS_TTL_SECONDS);
-            resp.addCookie(cookie);
+            HttpUtil.addAuthCookieWithSameSite(resp, token, (int) JWTUtil.ACCESS_TTL_SECONDS);
 
             Map<String, Object> me = new HashMap<>();
             me.put("userId",   userId);
