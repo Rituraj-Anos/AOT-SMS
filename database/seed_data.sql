@@ -12,22 +12,22 @@ VALUES ('admin', 'AOT Admin', 'superadmin', 'admin@aot.edu.in',
         '$2a$12$TWJGSKWNJxVgkx6Qc1tgnuvVCQYhVC7V7zXW5PUKF75CLLhXcZVh.');
 
 -- ============================================================
--- Teachers (password: Teacher@123)
+-- Teachers (password: Teacher@123) — Real CSE faculty codes
 -- ============================================================
 INSERT IGNORE INTO teachers (emp_id, teacher_name, dept_id, designation, phone, email, password_hash)
 VALUES
-  ('TCH2021001', 'Prof. A. A. Thakur',      1, 'Professor',           '9876543201', 'aat@aot.edu.in',
-   '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92'),
-  ('TCH2021002', 'Prof. J. Chakraborty',    1, 'Associate Professor', '9876543202', 'jc@aot.edu.in',
-   '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92'),
-  ('TCH2021003', 'Prof. D. K. Mandal',      1, 'Assistant Professor', '9876543203', 'dkm@aot.edu.in',
-   '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92'),
-  ('TCH2021004', 'Prof. A. R. Das',         1, 'Assistant Professor', '9876543204', 'ard@aot.edu.in',
-   '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92'),
-  ('TCH2021005', 'Prof. R. Pal',            1, 'HOD',                 '9876543205', 'rp@aot.edu.in',
-   '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92'),
-  ('TCH2021006', 'Prof. Dr. Nabanita Das',  1, 'Professor',           '9876543206', 'nd@aot.edu.in',
-   '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92');
+  ('ABP',  'Prof. ABP',  1, 'Professor',           '9876543201', 'abp@aot.edu.in',  '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92'),
+  ('JC',   'Prof. JC',   1, 'Associate Professor', '9876543202', 'jc@aot.edu.in',   '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92'),
+  ('DKM',  'Prof. DKM',  1, 'Assistant Professor', '9876543203', 'dkm@aot.edu.in',  '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92'),
+  ('ARD',  'Prof. ARD',  1, 'Assistant Professor', '9876543204', 'ard@aot.edu.in',  '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92'),
+  ('RP',   'Prof. RP',   1, 'HOD',                 '9876543205', 'rp@aot.edu.in',   '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92'),
+  ('ND',   'Prof. ND',   1, 'Professor',           '9876543206', 'nd@aot.edu.in',   '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92'),
+  ('AAT',  'Prof. AAT',  1, 'Assistant Professor', '9876543207', 'aat@aot.edu.in',  '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92'),
+  ('SRJS', 'Prof. SRJS', 1, 'Assistant Professor', '9876543208', 'srjs@aot.edu.in', '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92'),
+  ('SBR',  'Prof. SBR',  1, 'Assistant Professor', '9876543209', 'sbr@aot.edu.in',  '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92'),
+  ('BBH',  'Prof. BBH',  1, 'Assistant Professor', '9876543210', 'bbh@aot.edu.in',  '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92'),
+  ('DG',   'Prof. DG',   1, 'Assistant Professor', '9876543211', 'dg@aot.edu.in',   '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92'),
+  ('SD',   'Prof. SD',   1, 'Lab Instructor',      '9876543212', 'sd@aot.edu.in',   '$2a$12$tkR58rWdR8tYtwFLQe.Qp.Gn6GFNRccrgHu3tgy5eTKL76ctZgp92');
 
 -- ============================================================
 -- Students — CSE Dept, Sem 4, Section A, 2024 batch
@@ -108,11 +108,68 @@ VALUES
 
 -- ============================================================
 -- Teacher-subject mappings (Sem 4, Section A, 2025-26)
+-- Uses emp_id lookups for portability across DBs
 -- ============================================================
 INSERT IGNORE INTO teacher_subject_mapping (teacher_id, subject_id, dept_id, semester, section, academic_year)
-VALUES
-  (1, 1, 1, 4, 'A', '2025-26'),   -- AAT  → Discrete Math
-  (2, 2, 1, 4, 'A', '2025-26'),   -- JC   → Comp Arch
-  (3, 3, 1, 4, 'A', '2025-26'),   -- DKM  → FLAT
-  (4, 4, 1, 4, 'A', '2025-26'),   -- ARD  → DAA
-  (5, 5, 1, 4, 'A', '2025-26');   -- RP   → Biology
+SELECT t.teacher_id, s.subject_id, 1, 4, 'A', '2025-26'
+FROM teachers t, subjects s
+WHERE (t.emp_id, s.subject_code) IN (
+  ('RP',   'PCC-CS401'),
+  ('SBR',  'PCC-CS402'),
+  ('SRJS', 'PCC-CS403'),
+  ('DKM',  'PCC-CS404'),
+  ('ARD',  'BSC-401'),
+  ('DG',   'MC-401'),
+  ('JC',   'PCC-CS492'),
+  ('DKM',  'PCC-CS494'),
+  ('SD',   'PCC-CS492'),
+  ('SD',   'PCC-CS494'),
+  ('ND',   'SST-JAVA'),
+  ('ABP',  'AAT'),
+  ('BBH',  'EET')
+);
+
+-- ============================================================
+-- Class Schedule (CSE1 Sem4 2025-26 — real timetable)
+-- Inserted via emp_id+subject_code lookup for portability
+-- ============================================================
+INSERT IGNORE INTO class_schedule (teacher_id, subject_id, dept_id, semester, section, day_of_week, period_number, start_time, end_time, class_type, room_no, academic_year, is_active)
+SELECT t.teacher_id, s.subject_id, 1, 4, 'A', d.day_of_week, d.period, d.start_time, d.end_time, d.class_type, d.room_no, '2025-26', TRUE
+FROM teachers t, subjects s,
+(SELECT 'DKM' AS emp, 'PCC-CS404' AS code, 'Tuesday' AS day_of_week, 1 AS period, '09:45:00' AS start_time, '10:45:00' AS end_time, 'theory' AS class_type, NULL AS room_no UNION ALL
+ SELECT 'SRJS','PCC-CS403','Tuesday',2,'10:45:00','11:45:00','theory',NULL UNION ALL
+ SELECT 'SBR', 'PCC-CS402','Tuesday',3,'11:45:00','12:45:00','theory',NULL UNION ALL
+ SELECT 'ARD', 'BSC-401',  'Tuesday',4,'13:30:00','14:30:00','theory','Auditorium-A' UNION ALL
+ SELECT 'DKM', 'PCC-CS404','Wednesday',1,'09:45:00','10:45:00','theory',NULL UNION ALL
+ SELECT 'RP',  'PCC-CS401','Wednesday',2,'10:45:00','11:45:00','theory',NULL UNION ALL
+ SELECT 'BBH', 'EET',      'Wednesday',3,'11:45:00','12:45:00','tutorial',NULL UNION ALL
+ SELECT 'SRJS','PCC-CS403','Wednesday',4,'13:30:00','14:30:00','theory',NULL UNION ALL
+ SELECT 'SBR', 'PCC-CS402','Wednesday',5,'14:30:00','15:30:00','theory',NULL UNION ALL
+ SELECT 'DG',  'MC-401',   'Wednesday',6,'15:30:00','16:30:00','tutorial',NULL UNION ALL
+ SELECT 'RP',  'PCC-CS401','Thursday',1,'09:45:00','10:45:00','theory',NULL UNION ALL
+ SELECT 'ABP', 'AAT',      'Thursday',2,'10:45:00','11:45:00','tutorial',NULL UNION ALL
+ SELECT 'DKM', 'PCC-CS404','Thursday',3,'11:45:00','12:45:00','theory',NULL UNION ALL
+ SELECT 'SRJS','PCC-CS403','Thursday',4,'13:30:00','14:30:00','theory',NULL UNION ALL
+ SELECT 'JC',  'PCC-CS492','Thursday',4,'13:30:00','14:30:00','lab','Lab-9' UNION ALL
+ SELECT 'DKM', 'PCC-CS494','Thursday',4,'13:30:00','14:30:00','lab','Lab-5' UNION ALL
+ SELECT 'RP',  'PCC-CS401','Friday',1,'09:45:00','10:45:00','theory',NULL UNION ALL
+ SELECT 'JC',  'PCC-CS492','Friday',2,'10:45:00','11:45:00','lab','Lab-9' UNION ALL
+ SELECT 'SD',  'PCC-CS492','Friday',2,'10:45:00','11:45:00','lab','Lab-1' UNION ALL
+ SELECT 'SRJS','PCC-CS403','Friday',4,'13:30:00','14:30:00','theory',NULL UNION ALL
+ SELECT 'SBR', 'PCC-CS402','Friday',5,'14:30:00','15:30:00','theory',NULL UNION ALL
+ SELECT 'SBR', 'PCC-CS402','Saturday',1,'09:45:00','10:45:00','theory',NULL UNION ALL
+ SELECT 'ND',  'SST-JAVA', 'Saturday',2,'10:45:00','11:45:00','tutorial',NULL UNION ALL
+ SELECT 'DKM', 'PCC-CS404','Saturday',3,'11:45:00','12:45:00','theory',NULL UNION ALL
+ SELECT 'RP',  'PCC-CS401','Saturday',4,'13:30:00','14:30:00','theory',NULL UNION ALL
+ SELECT 'SD',  'PCC-CS492','Saturday',5,'14:30:00','15:30:00','lab','Lab-1' UNION ALL
+ SELECT 'DKM', 'PCC-CS494','Saturday',5,'14:30:00','15:30:00','lab','Lab-5'
+) AS d
+WHERE t.emp_id = d.emp AND s.subject_code = d.code;
+
+-- ============================================================
+-- Attendance Phases (CSE Sem 4 2025-26)
+-- ============================================================
+INSERT IGNORE INTO attendance_phases (dept_id, semester, academic_year, phase_name, start_date, end_date) VALUES
+(1, 4, '2025-26', 'Phase 1', '2026-01-01', '2026-03-15'),
+(1, 4, '2025-26', 'Phase 2', '2026-03-16', '2026-05-08'),
+(1, 4, '2025-26', 'Overall', '2026-01-01', '2026-06-30');

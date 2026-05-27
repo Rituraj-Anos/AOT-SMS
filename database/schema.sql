@@ -58,7 +58,9 @@ VALUES
   ('PCC-CS492', 'Computer Architecture Lab',            1, 4, 2, 'lab',      0, 0, 4),
   ('PCC-CS494', 'DAA Lab',                              1, 4, 2, 'lab',      0, 0, 4),
   ('EET',       'Java Training (Industry)',             1, 4, 0, 'training', 0, 0, 0),
-  ('ABP',       'Activity Based Project (EEE)',         1, 4, 0, 'training', 0, 0, 0);
+  ('ABP',       'Activity Based Project (EEE)',         1, 4, 0, 'training', 0, 0, 0),
+  ('AAT',       'Aptitude & Analytical Training',       1, 4, 0, 'training', 0, 0, 0),
+  ('SST-JAVA',  'Soft Skill Training - Java',           1, 4, 0, 'training', 0, 0, 0);
 
 -- ============================================================
 -- TABLE 3: students
@@ -310,6 +312,137 @@ GROUP BY s.student_id, sub.subject_id;
 CREATE OR REPLACE VIEW v_below_75 AS
 SELECT * FROM v_attendance_summary
 WHERE attendance_percent < 75;
+
+-- ============================================================
+-- TABLE 15: study_materials (Classroom module)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS study_materials (
+  material_id   INT AUTO_INCREMENT PRIMARY KEY,
+  teacher_id    INT NOT NULL,
+  subject_id    INT NOT NULL,
+  dept_id       INT NOT NULL,
+  semester      INT NOT NULL,
+  section       VARCHAR(5),
+  title         VARCHAR(200) NOT NULL,
+  description   TEXT,
+  material_type ENUM('notes','assignment','question_paper','syllabus','other') DEFAULT 'notes',
+  file_name     VARCHAR(255),
+  file_path     VARCHAR(500),
+  file_size     BIGINT DEFAULT 0,
+  due_date      DATE,
+  is_pinned     BOOLEAN DEFAULT FALSE,
+  posted_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (teacher_id) REFERENCES teachers(teacher_id),
+  FOREIGN KEY (subject_id) REFERENCES subjects(subject_id),
+  FOREIGN KEY (dept_id)    REFERENCES departments(dept_id)
+);
+
+-- ============================================================
+-- TABLE 16: submissions
+-- ============================================================
+CREATE TABLE IF NOT EXISTS submissions (
+  submission_id  INT AUTO_INCREMENT PRIMARY KEY,
+  material_id    INT NOT NULL,
+  student_id     INT NOT NULL,
+  file_name      VARCHAR(255),
+  file_path      VARCHAR(500),
+  submitted_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  status         ENUM('submitted','late','graded') DEFAULT 'submitted',
+  grade          VARCHAR(10),
+  feedback       TEXT,
+  UNIQUE KEY unique_submission (material_id, student_id),
+  FOREIGN KEY (material_id) REFERENCES study_materials(material_id) ON DELETE CASCADE,
+  FOREIGN KEY (student_id)  REFERENCES students(student_id)
+);
+
+-- ============================================================
+-- TABLE 17: material_comments (Discussion threads)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS material_comments (
+  comment_id     INT AUTO_INCREMENT PRIMARY KEY,
+  material_id    INT NOT NULL,
+  posted_by_role ENUM('admin','teacher','student') NOT NULL,
+  posted_by_id   INT NOT NULL,
+  posted_by_name VARCHAR(100) NOT NULL,
+  comment_text   TEXT NOT NULL,
+  posted_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (material_id) REFERENCES study_materials(material_id) ON DELETE CASCADE
+);
+
+-- ============================================================
+-- TABLE 18: class_schedule (Timetable)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS class_schedule (
+  schedule_id    INT AUTO_INCREMENT PRIMARY KEY,
+  teacher_id     INT NOT NULL,
+  subject_id     INT NOT NULL,
+  dept_id        INT NOT NULL,
+  semester       INT NOT NULL,
+  section        VARCHAR(5) NOT NULL,
+  day_of_week    ENUM('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday') NOT NULL,
+  period_number  INT NOT NULL,
+  start_time     TIME,
+  end_time       TIME,
+  class_type     ENUM('theory','lab','tutorial') DEFAULT 'theory',
+  room_no        VARCHAR(20),
+  academic_year  VARCHAR(10),
+  is_active      BOOLEAN DEFAULT TRUE,
+  UNIQUE KEY unique_schedule (teacher_id, subject_id, day_of_week, period_number, section, academic_year),
+  FOREIGN KEY (teacher_id) REFERENCES teachers(teacher_id),
+  FOREIGN KEY (subject_id) REFERENCES subjects(subject_id),
+  FOREIGN KEY (dept_id)    REFERENCES departments(dept_id)
+);
+
+-- ============================================================
+-- TABLE 19: schedule_attendance (Student self-record)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS schedule_attendance (
+  id                  INT AUTO_INCREMENT PRIMARY KEY,
+  schedule_id         INT NOT NULL,
+  student_id          INT NOT NULL,
+  class_date          DATE NOT NULL,
+  status              ENUM('attended','missed','off','substituted') NOT NULL,
+  substitute_teacher  VARCHAR(100),
+  substitute_subject  VARCHAR(100),
+  notes               TEXT,
+  marked_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_sched_att (schedule_id, student_id, class_date),
+  FOREIGN KEY (schedule_id) REFERENCES class_schedule(schedule_id),
+  FOREIGN KEY (student_id)  REFERENCES students(student_id)
+);
+
+-- ============================================================
+-- TABLE 20: attendance_phases (Phase 1 / Phase 2 / Overall date ranges)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS attendance_phases (
+  phase_id      INT AUTO_INCREMENT PRIMARY KEY,
+  dept_id       INT NOT NULL,
+  semester      INT NOT NULL,
+  academic_year VARCHAR(10) NOT NULL,
+  phase_name    VARCHAR(50) NOT NULL,
+  start_date    DATE NOT NULL,
+  end_date      DATE NOT NULL,
+  FOREIGN KEY (dept_id) REFERENCES departments(dept_id)
+);
+
+-- ============================================================
+-- TABLE 21: attendance_disputes (Student-Teacher dispute resolution)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS attendance_disputes (
+  dispute_id     INT AUTO_INCREMENT PRIMARY KEY,
+  student_id     INT NOT NULL,
+  subject_id     INT NOT NULL,
+  class_date     DATE NOT NULL,
+  student_note   TEXT NOT NULL,
+  status         ENUM('pending','resolved','rejected') DEFAULT 'pending',
+  teacher_note   TEXT,
+  created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  resolved_at    TIMESTAMP NULL,
+  resolved_by    INT NULL,
+  UNIQUE KEY unique_dispute (student_id, subject_id, class_date),
+  FOREIGN KEY (student_id) REFERENCES students(student_id),
+  FOREIGN KEY (subject_id) REFERENCES subjects(subject_id)
+);
 
 -- ============================================================
 -- NOTE: The default admin account will be seeded by the
