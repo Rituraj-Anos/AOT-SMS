@@ -141,7 +141,7 @@ Open **http://localhost:5173** — the Vite dev server proxies `/api` to Tomcat 
 | Teacher | `SBR` | `Teacher@123` | Prof. SBR |
 | Teacher | `BBH` | `Teacher@123` | Prof. BBH |
 | Teacher | `DG` | `Teacher@123` | Prof. DG |
-| Student | `24CSE001` | `Student@123` | Amit Kumar |
+| Student | `24CSE027` | `Student@123` | Rupsha Banerjee |
 | Student | `24CSE041` | `Student@123` | Rituraj Mukhopadhyay |
 
 ---
