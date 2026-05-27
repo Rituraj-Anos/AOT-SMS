@@ -40,11 +40,12 @@ public class CloudinaryUtil {
     @SuppressWarnings("unchecked")
     public static String uploadFile(InputStream fileStream, String fileName) throws Exception {
         if (cloudinary == null) throw new IllegalStateException("Cloudinary not configured");
-        // Cloudinary requires byte[] not InputStream
         byte[] data = fileStream.readAllBytes();
+        // Use "raw" resource type for documents (PDF, DOCX, etc.)
+        // "auto" misclassifies PDFs as images which breaks viewing
         Map<String, Object> result = cloudinary.uploader().upload(data, ObjectUtils.asMap(
             "public_id", "aot-sms/" + System.currentTimeMillis() + "_" + sanitize(fileName),
-            "resource_type", "auto"
+            "resource_type", "raw"
         ));
         return result.get("secure_url").toString();
     }

@@ -146,8 +146,9 @@ public class MaterialServlet extends HttpServlet {
     }
 
     /**
-     * Download/View: redirect to Cloudinary URL.
-     * If file_path is a URL (starts with http), redirect directly.
+     * Download/View: redirect to Cloudinary URL directly.
+     * Cloudinary raw URLs serve files with correct content-type.
+     * Browser will display PDFs inline or download other file types.
      */
     private void download(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
@@ -161,23 +162,13 @@ public class MaterialServlet extends HttpServlet {
 
             String filePath = (String) m.get("filePath");
 
-            // Cloudinary URL — redirect browser directly
             if (filePath.startsWith("http")) {
-                // For view mode, use Cloudinary's inline flag
-                boolean viewMode = "true".equalsIgnoreCase(req.getParameter("view"));
-                String url = filePath;
-                if (viewMode && filePath.contains("/upload/")) {
-                    // Insert fl_attachment:false for inline viewing
-                    url = filePath.replace("/upload/", "/upload/fl_inline/");
-                }
-                resp.setHeader("Access-Control-Allow-Origin", req.getHeader("Origin"));
-                resp.setHeader("Access-Control-Allow-Credentials", "true");
-                resp.sendRedirect(url);
+                // Redirect to Cloudinary URL — browser handles PDF viewing natively
+                resp.sendRedirect(filePath);
                 return;
             }
 
-            // Legacy: file on local disk (shouldn't happen in production)
-            HttpUtil.writeError(resp, 404, "File not available (legacy local storage)");
+            HttpUtil.writeError(resp, 404, "File not available");
         } catch (Exception e) {
             HttpUtil.writeError(resp, 500, "Download failed: " + e.getMessage());
         }

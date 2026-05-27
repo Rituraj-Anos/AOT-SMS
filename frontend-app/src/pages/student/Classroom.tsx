@@ -157,13 +157,28 @@ function MaterialCard({ material: m, studentId, onSubmit, onComment }:
           <>
             <Button size="sm" variant="secondary" onClick={() => {
               const base = import.meta.env.VITE_API_BASE_URL || '';
-              window.open(`${base}/api/materials/download?id=${m.materialId}&view=true`, '_blank');
+              window.open(`${base}/api/materials/download?id=${m.materialId}`, '_blank');
             }}>
               <Eye className="h-3.5 w-3.5" /> View
             </Button>
             <Button size="sm" variant="secondary" onClick={() => {
               const base = import.meta.env.VITE_API_BASE_URL || '';
-              window.open(`${base}/api/materials/download?id=${m.materialId}`, '_blank');
+              // Force download by fetching and creating blob
+              fetch(`${base}/api/materials/download?id=${m.materialId}`, { redirect: 'follow' })
+                .then((res) => {
+                  if (!res.ok) throw new Error('Download failed');
+                  return res.blob();
+                })
+                .then((blob) => {
+                  const a = document.createElement('a');
+                  a.href = URL.createObjectURL(blob);
+                  a.download = m.fileName || 'file';
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  URL.revokeObjectURL(a.href);
+                })
+                .catch(() => { toast.error('Download failed'); });
             }}>
               <Download className="h-3.5 w-3.5" /> Download
             </Button>
