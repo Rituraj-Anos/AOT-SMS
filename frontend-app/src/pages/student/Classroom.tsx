@@ -16,6 +16,7 @@ import { useSubjects } from '@/hooks/useSubjects';
 import { useMaterials, useMySubmission, useSubmitAssignment } from '@/hooks/useMaterials';
 import { cn } from '@/lib/utils';
 import { CommentThread, CommentCountBadge } from '@/components/shared/CommentThread';
+import { RichText } from '@/components/shared/RichText';
 import type { StudyMaterial, MaterialType } from '@/types/api';
 
 const TYPE_FILTERS: { value: MaterialType | 'all'; label: string }[] = [
@@ -151,7 +152,11 @@ function MaterialCard({ material: m, studentId, onSubmit, onComment }:
         </div>
         {dueInfo && <Badge variant={dueInfo.variant as any}>{dueInfo.label}</Badge>}
       </div>
-      {m.description && <p className="text-sm text-muted-foreground mb-3">{m.description}</p>}
+      {m.description && (
+        <div className="mb-3">
+          <RichText text={m.description} className="text-sm text-muted-foreground" />
+        </div>
+      )}
       <div className="flex items-center gap-2 flex-wrap">
         {m.fileName && (
           <>

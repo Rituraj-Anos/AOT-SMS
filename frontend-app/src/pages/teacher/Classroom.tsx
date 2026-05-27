@@ -29,6 +29,7 @@ import {
 } from '@/hooks/useMaterials';
 import { cn } from '@/lib/utils';
 import { CommentThread, CommentCountBadge } from '@/components/shared/CommentThread';
+import { RichText } from '@/components/shared/RichText';
 import type { StudyMaterial, MaterialType, Submission } from '@/types/api';
 
 export default function TeacherClassroom() {
@@ -118,7 +119,11 @@ export default function TeacherClassroom() {
                   </Button>
                 </div>
               </div>
-              {m.description && <p className="text-sm text-muted-foreground mb-2">{m.description}</p>}
+              {m.description && (
+                <div className="mb-2">
+                  <RichText text={m.description} className="text-sm text-muted-foreground" />
+                </div>
+              )}
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 {m.fileName && <span className="inline-flex items-center gap-1"><Paperclip className="h-3 w-3" />{m.fileName}</span>}
                 {m.dueDate && <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />Due: {m.dueDate.slice(0, 10)}</span>}
