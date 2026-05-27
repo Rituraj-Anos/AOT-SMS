@@ -280,8 +280,11 @@ function SubmissionsSheet({ material, open, onOpenChange }:
               </div>
               {s.fileName && (
                 <Button size="sm" variant="secondary" className="mb-2" onClick={() => {
-                  const base = import.meta.env.VITE_API_BASE_URL || '';
-                  window.open(`${base}/api/submissions/download?id=${s.submissionId}`, '_blank');
+                  if (s.filePath && s.filePath.startsWith('http')) {
+                    window.open(s.filePath, '_blank');
+                  } else {
+                    toast.error('File not available');
+                  }
                 }}>
                   <Download className="h-3.5 w-3.5" /> Download File
                 </Button>

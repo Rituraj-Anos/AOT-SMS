@@ -156,29 +156,25 @@ function MaterialCard({ material: m, studentId, onSubmit, onComment }:
         {m.fileName && (
           <>
             <Button size="sm" variant="secondary" onClick={() => {
-              const base = import.meta.env.VITE_API_BASE_URL || '';
-              window.open(`${base}/api/materials/download?id=${m.materialId}`, '_blank');
+              // Open Cloudinary URL directly (filePath is the full URL)
+              if (m.filePath && m.filePath.startsWith('http')) {
+                window.open(m.filePath, '_blank');
+              } else {
+                toast.error('File not available');
+              }
             }}>
               <Eye className="h-3.5 w-3.5" /> View
             </Button>
             <Button size="sm" variant="secondary" onClick={() => {
-              const base = import.meta.env.VITE_API_BASE_URL || '';
-              // Force download by fetching and creating blob
-              fetch(`${base}/api/materials/download?id=${m.materialId}`, { redirect: 'follow' })
-                .then((res) => {
-                  if (!res.ok) throw new Error('Download failed');
-                  return res.blob();
-                })
-                .then((blob) => {
-                  const a = document.createElement('a');
-                  a.href = URL.createObjectURL(blob);
-                  a.download = m.fileName || 'file';
-                  document.body.appendChild(a);
-                  a.click();
-                  a.remove();
-                  URL.revokeObjectURL(a.href);
-                })
-                .catch(() => { toast.error('Download failed'); });
+              if (m.filePath && m.filePath.startsWith('http')) {
+                // For download, add fl_attachment to Cloudinary URL
+                const url = m.filePath.includes('/raw/upload/')
+                  ? m.filePath.replace('/raw/upload/', '/raw/upload/fl_attachment/')
+                  : m.filePath;
+                window.open(url, '_blank');
+              } else {
+                toast.error('File not available');
+              }
             }}>
               <Download className="h-3.5 w-3.5" /> Download
             </Button>
