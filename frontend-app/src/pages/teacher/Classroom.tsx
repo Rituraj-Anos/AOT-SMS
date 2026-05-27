@@ -281,16 +281,7 @@ function SubmissionsSheet({ material, open, onOpenChange }:
               {s.fileName && (
                 <Button size="sm" variant="secondary" className="mb-2" onClick={() => {
                   const base = import.meta.env.VITE_API_BASE_URL || '';
-                  fetch(`${base}/api/submissions/download?id=${s.submissionId}`, { credentials: 'include' })
-                    .then((res) => { if (!res.ok) throw new Error('Download failed'); return res.blob(); })
-                    .then((blob) => {
-                      const a = document.createElement('a');
-                      a.href = URL.createObjectURL(blob);
-                      a.download = s.fileName || 'submission';
-                      document.body.appendChild(a); a.click(); a.remove();
-                      URL.revokeObjectURL(a.href);
-                    })
-                    .catch(() => {});
+                  window.open(`${base}/api/submissions/download?id=${s.submissionId}`, '_blank');
                 }}>
                   <Download className="h-3.5 w-3.5" /> Download File
                 </Button>

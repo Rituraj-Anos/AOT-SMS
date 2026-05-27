@@ -1,6 +1,7 @@
 package com.aot.sms.servlet;
 
 import com.aot.sms.dao.SubmissionDAO;
+import com.aot.sms.util.CloudinaryUtil;
 import com.aot.sms.util.HttpUtil;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -12,24 +13,19 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
- * Submissions API — student upload + teacher grading.
+ * Submissions API — student upload to Cloudinary + teacher grading.
  *
- *   POST   /api/submissions          — student submits assignment (multipart)
- *   GET    /api/submissions?materialId=X  — list submissions for a material (teacher/admin)
- *   GET    /api/submissions?materialId=X&studentId=Y  — student's own submission
- *   PUT    /api/submissions          — grade a submission (JSON: submissionId, grade, feedback)
+ *   POST   /api/submissions              — student submits (multipart → Cloudinary)
+ *   GET    /api/submissions?materialId=X  — list submissions
+ *   GET    /api/submissions?materialId=X&studentId=Y  — student's own
+ *   GET    /api/submissions/download?id=X — redirect to Cloudinary URL
+ *   PUT    /api/submissions              — grade a submission
  */
 @WebServlet({"/api/submissions", "/api/submissions/download"})
 @MultipartConfig(
@@ -39,25 +35,7 @@ import java.util.UUID;
 )
 public class SubmissionServlet extends HttpServlet {
 
-    private static final String UPLOAD_DIR = "uploads/submissions";
-    private static final String PERSISTENT_UPLOAD_ROOT;
-    static {
-        String envPath = System.getenv("UPLOAD_PATH");
-        if (envPath != null && !envPath.isBlank()) {
-            PERSISTENT_UPLOAD_ROOT = envPath + "/submissions";
-        } else if (System.getProperty("os.name", "").toLowerCase().contains("win")) {
-            PERSISTENT_UPLOAD_ROOT = "C:/coding/AOT-SMS/uploads/submissions";
-        } else {
-            PERSISTENT_UPLOAD_ROOT = "/tmp/aot-uploads/submissions";
-        }
-    }
     private final SubmissionDAO dao = new SubmissionDAO();
-
-    private String getUploadDir() {
-        File dir = new File(PERSISTENT_UPLOAD_ROOT);
-        if (!dir.exists()) dir.mkdirs();
-        return PERSISTENT_UPLOAD_ROOT;
-    }
 
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse resp) {
@@ -85,13 +63,11 @@ public class SubmissionServlet extends HttpServlet {
             int materialId = Integer.parseInt(materialIdStr);
 
             if (studentIdStr != null) {
-                // Single student's submission
                 Map<String, Object> sub = dao.getByStudentMaterial(Integer.parseInt(studentIdStr), materialId);
-                HttpUtil.writeOk(resp, sub); // null if not submitted
+                HttpUtil.writeOk(resp, sub);
                 return;
             }
 
-            // All submissions for a material (teacher/admin view)
             List<Map<String, Object>> list = dao.getByMaterial(materialId);
             HttpUtil.writeOk(resp, list);
         } catch (Exception e) {
@@ -128,15 +104,12 @@ public class SubmissionServlet extends HttpServlet {
             }
 
             String fileName = getFileName(filePart);
-            String ext = fileName.contains(".") ? fileName.substring(fileName.lastIndexOf('.')) : "";
-            String storedName = UUID.randomUUID() + ext;
 
-            String uploadPath = getUploadDir();
-            Path target = Paths.get(uploadPath, storedName);
+            // Upload to Cloudinary
+            String filePath;
             try (InputStream is = filePart.getInputStream()) {
-                Files.copy(is, target, StandardCopyOption.REPLACE_EXISTING);
+                filePath = CloudinaryUtil.uploadFile(is, fileName);
             }
-            String filePath = UPLOAD_DIR + "/" + storedName;
 
             int id = dao.insert(materialId, studentId, fileName, filePath);
             if (id < 0) { HttpUtil.writeError(resp, 500, "Insert failed"); return; }
@@ -175,34 +148,22 @@ public class SubmissionServlet extends HttpServlet {
         try {
             String idStr = req.getParameter("id");
             if (idStr == null) { HttpUtil.writeError(resp, 400, "id required"); return; }
-            int submissionId = Integer.parseInt(idStr);
 
-            // Get submission record
-            Map<String, Object> sub = dao.getSubmissionById(submissionId);
+            Map<String, Object> sub = dao.getSubmissionById(Integer.parseInt(idStr));
             if (sub == null || sub.get("filePath") == null) {
                 HttpUtil.writeError(resp, 404, "Submission file not found");
                 return;
             }
 
-            String relativePath = (String) sub.get("filePath");
-            String storedName = relativePath.replace("uploads/submissions/", "");
-            java.nio.file.Path path = java.nio.file.Paths.get(getUploadDir(), storedName);
+            String filePath = (String) sub.get("filePath");
 
-            if (!java.nio.file.Files.exists(path)) {
-                // Try webapp-relative fallback
-                String webappPath = getServletContext().getRealPath("") + java.io.File.separator + relativePath;
-                path = java.nio.file.Paths.get(webappPath);
-                if (!java.nio.file.Files.exists(path)) {
-                    HttpUtil.writeError(resp, 404, "File missing from disk");
-                    return;
-                }
+            // Cloudinary URL — redirect
+            if (filePath.startsWith("http")) {
+                resp.sendRedirect(filePath);
+                return;
             }
 
-            String fileName = (String) sub.get("fileName");
-            resp.setContentType("application/octet-stream");
-            resp.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-            resp.setContentLengthLong(java.nio.file.Files.size(path));
-            java.nio.file.Files.copy(path, resp.getOutputStream());
+            HttpUtil.writeError(resp, 404, "File not available");
         } catch (Exception e) {
             HttpUtil.writeError(resp, 500, "Download failed: " + e.getMessage());
         }

@@ -58,6 +58,13 @@
       <artifactId>commons-csv</artifactId>
       <version>1.10.0</version>
     </dependency>
+
+    <!-- Cloudinary (cloud file storage) -->
+    <dependency>
+      <groupId>com.cloudinary</groupId>
+      <artifactId>cloudinary-http44</artifactId>
+      <version>1.34.0</version>
+    </dependency>
   </dependencies>
 
   <build>

@@ -157,37 +157,13 @@ function MaterialCard({ material: m, studentId, onSubmit, onComment }:
           <>
             <Button size="sm" variant="secondary" onClick={() => {
               const base = import.meta.env.VITE_API_BASE_URL || '';
-              fetch(`${base}/api/materials/download?id=${m.materialId}&view=true`, { credentials: 'include' })
-                .then((res) => {
-                  if (!res.ok) throw new Error(res.status === 404 ? 'File no longer available on server' : 'Failed');
-                  const contentType = res.headers.get('Content-Type') || 'application/pdf';
-                  return res.blob().then((b) => new Blob([b], { type: contentType }));
-                })
-                .then((blob) => {
-                  const url = URL.createObjectURL(blob);
-                  window.open(url, '_blank');
-                })
-                .catch((e) => { toast.error(e.message || 'View failed'); });
+              window.open(`${base}/api/materials/download?id=${m.materialId}&view=true`, '_blank');
             }}>
               <Eye className="h-3.5 w-3.5" /> View
             </Button>
             <Button size="sm" variant="secondary" onClick={() => {
               const base = import.meta.env.VITE_API_BASE_URL || '';
-              fetch(`${base}/api/materials/download?id=${m.materialId}`, { credentials: 'include' })
-                .then((res) => {
-                  if (!res.ok) throw new Error(res.status === 404 ? 'File no longer available on server' : 'Download failed');
-                  return res.blob();
-                })
-                .then((blob) => {
-                  const a = document.createElement('a');
-                  a.href = URL.createObjectURL(blob);
-                  a.download = m.fileName || 'file';
-                  document.body.appendChild(a);
-                  a.click();
-                  a.remove();
-                  URL.revokeObjectURL(a.href);
-                })
-                .catch((e) => { toast.error(e.message || 'Download failed'); });
+              window.open(`${base}/api/materials/download?id=${m.materialId}`, '_blank');
             }}>
               <Download className="h-3.5 w-3.5" /> Download
             </Button>

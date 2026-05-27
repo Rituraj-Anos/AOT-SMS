@@ -1,6 +1,7 @@
 package com.aot.sms.servlet;
 
 import com.aot.sms.dao.MaterialDAO;
+import com.aot.sms.util.CloudinaryUtil;
 import com.aot.sms.util.HttpUtil;
 
 import jakarta.servlet.annotation.MultipartConfig;
@@ -10,72 +11,30 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
- * Study Materials API — multipart upload + JSON list + file download + delete.
+ * Study Materials API — Cloudinary upload + JSON list + redirect download + delete.
  *
- *   POST   /api/materials          — upload material (multipart/form-data)
+ *   POST   /api/materials              — upload material (multipart/form-data → Cloudinary)
  *   GET    /api/materials?subjectId=&type=  — list materials
- *   GET    /api/materials?id=X     — single material
- *   GET    /api/materials?all=1[&deptId=&subjectId=&type=]  — admin: all materials
- *   GET    /api/materials/download?id=X  — stream file download
- *   DELETE /api/materials?id=X     — delete material + file
+ *   GET    /api/materials?id=X         — single material
+ *   GET    /api/materials?all=1        — admin: all materials
+ *   GET    /api/materials/download?id=X  — redirect to Cloudinary URL
+ *   DELETE /api/materials?id=X         — delete material
  */
 @WebServlet({"/api/materials", "/api/materials/download"})
 @MultipartConfig(
-    fileSizeThreshold = 1024 * 1024,      // 1 MB
-    maxFileSize       = 50 * 1024 * 1024,  // 50 MB
-    maxRequestSize    = 55 * 1024 * 1024   // 55 MB
+    fileSizeThreshold = 1024 * 1024,
+    maxFileSize       = 50 * 1024 * 1024,
+    maxRequestSize    = 55 * 1024 * 1024
 )
 public class MaterialServlet extends HttpServlet {
 
-    private static final String UPLOAD_DIR = "uploads/materials";
-    /**
-     * Upload directory — uses UPLOAD_PATH env var if set, otherwise /tmp/aot-uploads/materials
-     * on Linux (Render) or C:/coding/AOT-SMS/uploads/materials on Windows (local dev).
-     */
-    private static final String PERSISTENT_UPLOAD_ROOT;
-    static {
-        String envPath = System.getenv("UPLOAD_PATH");
-        if (envPath != null && !envPath.isBlank()) {
-            PERSISTENT_UPLOAD_ROOT = envPath + "/materials";
-        } else if (System.getProperty("os.name", "").toLowerCase().contains("win")) {
-            PERSISTENT_UPLOAD_ROOT = "C:/coding/AOT-SMS/uploads/materials";
-        } else {
-            PERSISTENT_UPLOAD_ROOT = "/tmp/aot-uploads/materials";
-        }
-    }
     private final MaterialDAO dao = new MaterialDAO();
-
-    private String getUploadDir() {
-        File dir = new File(PERSISTENT_UPLOAD_ROOT);
-        if (!dir.exists()) dir.mkdirs();
-        return PERSISTENT_UPLOAD_ROOT;
-    }
-
-    private Path resolveFilePath(String relativePath) {
-        // Try persistent location first
-        Path persistent = Paths.get(PERSISTENT_UPLOAD_ROOT,
-            relativePath.replace(UPLOAD_DIR + "/", "").replace(UPLOAD_DIR + "\\", ""));
-        if (Files.exists(persistent)) return persistent;
-
-        // Fallback: try relative to webapp (legacy files)
-        String webappPath = getServletContext().getRealPath("") + File.separator + relativePath;
-        Path webapp = Paths.get(webappPath);
-        if (Files.exists(webapp)) return webapp;
-
-        return persistent; // return persistent path even if not found (for error message)
-    }
 
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse resp) {
@@ -87,7 +46,6 @@ public class MaterialServlet extends HttpServlet {
         HttpUtil.applyCors(req, resp);
         String path = req.getServletPath();
 
-        // Download mode
         if ("/api/materials/download".equals(path)) {
             download(req, resp);
             return;
@@ -142,24 +100,19 @@ public class MaterialServlet extends HttpServlet {
             String dueDate   = req.getParameter("dueDate");
             boolean pinned   = "true".equalsIgnoreCase(req.getParameter("isPinned"));
 
-            // Handle file upload
             String fileName = null;
-            String filePath = null;
+            String filePath = null;  // Will store Cloudinary URL
             long fileSize = 0;
 
             Part filePart = req.getPart("file");
             if (filePart != null && filePart.getSize() > 0) {
                 fileName = getFileName(filePart);
-                String ext = fileName.contains(".") ? fileName.substring(fileName.lastIndexOf('.')) : "";
-                String storedName = UUID.randomUUID() + ext;
-
-                String uploadPath = getUploadDir();
-                Path target = Paths.get(uploadPath, storedName);
-                try (InputStream is = filePart.getInputStream()) {
-                    Files.copy(is, target, StandardCopyOption.REPLACE_EXISTING);
-                }
-                filePath = UPLOAD_DIR + "/" + storedName;
                 fileSize = filePart.getSize();
+
+                // Upload to Cloudinary
+                try (InputStream is = filePart.getInputStream()) {
+                    filePath = CloudinaryUtil.uploadFile(is, fileName);
+                }
             }
 
             int id = dao.insert(teacherId, subjectId, deptId, semester, section,
@@ -185,14 +138,6 @@ public class MaterialServlet extends HttpServlet {
             String idStr = req.getParameter("id");
             if (idStr == null) { HttpUtil.writeError(resp, 400, "id required"); return; }
             int id = Integer.parseInt(idStr);
-
-            // Delete file from disk
-            Map<String, Object> m = dao.getById(id);
-            if (m != null && m.get("filePath") != null) {
-                Path path = resolveFilePath((String) m.get("filePath"));
-                Files.deleteIfExists(path);
-            }
-
             dao.delete(id);
             HttpUtil.writeOk(resp, null, "Material deleted");
         } catch (Exception e) {
@@ -200,6 +145,10 @@ public class MaterialServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Download/View: redirect to Cloudinary URL.
+     * If file_path is a URL (starts with http), redirect directly.
+     */
     private void download(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
             String idStr = req.getParameter("id");
@@ -209,39 +158,26 @@ public class MaterialServlet extends HttpServlet {
                 HttpUtil.writeError(resp, 404, "File not found");
                 return;
             }
-            Path path = resolveFilePath((String) m.get("filePath"));
-            if (!Files.exists(path)) {
-                HttpUtil.writeError(resp, 404, "File missing from disk: " + path.toString());
+
+            String filePath = (String) m.get("filePath");
+
+            // Cloudinary URL — redirect browser directly
+            if (filePath.startsWith("http")) {
+                // For view mode, use Cloudinary's inline flag
+                boolean viewMode = "true".equalsIgnoreCase(req.getParameter("view"));
+                String url = filePath;
+                if (viewMode && filePath.contains("/upload/")) {
+                    // Insert fl_attachment:false for inline viewing
+                    url = filePath.replace("/upload/", "/upload/fl_inline/");
+                }
+                resp.setHeader("Access-Control-Allow-Origin", req.getHeader("Origin"));
+                resp.setHeader("Access-Control-Allow-Credentials", "true");
+                resp.sendRedirect(url);
                 return;
             }
 
-            String fileName = (String) m.get("fileName");
-            boolean viewMode = "true".equalsIgnoreCase(req.getParameter("view"));
-
-            // Determine content type from file extension
-            String contentType = "application/octet-stream";
-            if (fileName != null) {
-                String lower = fileName.toLowerCase();
-                if (lower.endsWith(".pdf")) contentType = "application/pdf";
-                else if (lower.endsWith(".png")) contentType = "image/png";
-                else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) contentType = "image/jpeg";
-                else if (lower.endsWith(".gif")) contentType = "image/gif";
-                else if (lower.endsWith(".txt")) contentType = "text/plain";
-                else if (lower.endsWith(".html")) contentType = "text/html";
-                else if (lower.endsWith(".doc") || lower.endsWith(".docx")) contentType = "application/msword";
-                else if (lower.endsWith(".ppt") || lower.endsWith(".pptx")) contentType = "application/vnd.ms-powerpoint";
-            }
-
-            resp.setContentType(contentType);
-            if (viewMode) {
-                // Inline display (browser renders PDF/images)
-                resp.setHeader("Content-Disposition", "inline; filename=\"" + fileName + "\"");
-            } else {
-                // Force download
-                resp.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-            }
-            resp.setContentLengthLong(Files.size(path));
-            Files.copy(path, resp.getOutputStream());
+            // Legacy: file on local disk (shouldn't happen in production)
+            HttpUtil.writeError(resp, 404, "File not available (legacy local storage)");
         } catch (Exception e) {
             HttpUtil.writeError(resp, 500, "Download failed: " + e.getMessage());
         }
