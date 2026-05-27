@@ -14,7 +14,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL
 export const api = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,
-  timeout: 15_000,
+  timeout: 60_000,  // 60s — Render free tier cold starts take 30-50s
 });
 
 let currentlyRedirecting = false;
