@@ -285,9 +285,9 @@ function SubmissionsSheet({ material, open, onOpenChange }:
                     const resp = await fetch(`${base}/api/submissions/download?id=${s.submissionId}`, { credentials: 'include' });
                     if (!resp.ok) throw new Error('Failed');
                     const json = await resp.json();
-                    const signedUrl = json.data?.url;
-                    if (!signedUrl) throw new Error('No URL');
-                    const fileResp = await fetch(signedUrl);
+                    const fileUrl = json.data?.url;
+                    if (!fileUrl) throw new Error('No URL');
+                    const fileResp = await fetch(fileUrl, { credentials: 'omit' });
                     if (!fileResp.ok) throw new Error('Download failed');
                     const blob = await fileResp.blob();
                     const a = document.createElement('a');

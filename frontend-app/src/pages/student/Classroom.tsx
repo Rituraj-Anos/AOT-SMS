@@ -157,15 +157,14 @@ function MaterialCard({ material: m, studentId, onSubmit, onComment }:
           <>
             <Button size="sm" variant="secondary" onClick={async () => {
               try {
-                // Get signed URL from backend
                 const base = import.meta.env.VITE_API_BASE_URL || '';
                 const resp = await fetch(`${base}/api/materials/download?id=${m.materialId}`, { credentials: 'include' });
                 if (!resp.ok) throw new Error('Failed');
                 const json = await resp.json();
-                const signedUrl = json.data?.url;
-                if (!signedUrl) throw new Error('No URL');
-                // Fetch file from signed URL and open as PDF
-                const fileResp = await fetch(signedUrl);
+                const fileUrl = json.data?.url;
+                if (!fileUrl) throw new Error('No URL');
+                // Fetch from Cloudinary WITHOUT credentials (CORS won't block)
+                const fileResp = await fetch(fileUrl, { credentials: 'omit' });
                 if (!fileResp.ok) throw new Error('File fetch failed');
                 const blob = await fileResp.blob();
                 const pdfBlob = new Blob([blob], { type: 'application/pdf' });
@@ -180,9 +179,9 @@ function MaterialCard({ material: m, studentId, onSubmit, onComment }:
                 const resp = await fetch(`${base}/api/materials/download?id=${m.materialId}`, { credentials: 'include' });
                 if (!resp.ok) throw new Error('Failed');
                 const json = await resp.json();
-                const signedUrl = json.data?.url;
-                if (!signedUrl) throw new Error('No URL');
-                const fileResp = await fetch(signedUrl);
+                const fileUrl = json.data?.url;
+                if (!fileUrl) throw new Error('No URL');
+                const fileResp = await fetch(fileUrl, { credentials: 'omit' });
                 if (!fileResp.ok) throw new Error('Download failed');
                 const blob = await fileResp.blob();
                 const a = document.createElement('a');
