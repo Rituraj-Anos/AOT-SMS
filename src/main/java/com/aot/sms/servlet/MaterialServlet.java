@@ -146,9 +146,7 @@ public class MaterialServlet extends HttpServlet {
     }
 
     /**
-     * Download/View: redirect to Cloudinary URL directly.
-     * Cloudinary raw URLs serve files with correct content-type.
-     * Browser will display PDFs inline or download other file types.
+     * Download/View: return a signed Cloudinary URL that the frontend can open.
      */
     private void download(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
@@ -163,8 +161,9 @@ public class MaterialServlet extends HttpServlet {
             String filePath = (String) m.get("filePath");
 
             if (filePath.startsWith("http")) {
-                // Redirect to Cloudinary URL — browser handles PDF viewing natively
-                resp.sendRedirect(filePath);
+                // Return signed URL as JSON so frontend can open it
+                String signedUrl = CloudinaryUtil.getSignedUrl(filePath);
+                HttpUtil.writeOk(resp, Map.of("url", signedUrl, "fileName", m.getOrDefault("fileName", "file")));
                 return;
             }
 

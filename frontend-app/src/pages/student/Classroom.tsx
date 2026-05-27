@@ -155,26 +155,43 @@ function MaterialCard({ material: m, studentId, onSubmit, onComment }:
       <div className="flex items-center gap-2 flex-wrap">
         {m.fileName && (
           <>
-            <Button size="sm" variant="secondary" onClick={() => {
-              // Open Cloudinary URL directly (filePath is the full URL)
-              if (m.filePath && m.filePath.startsWith('http')) {
-                window.open(m.filePath, '_blank');
-              } else {
-                toast.error('File not available');
-              }
+            <Button size="sm" variant="secondary" onClick={async () => {
+              try {
+                // Get signed URL from backend
+                const base = import.meta.env.VITE_API_BASE_URL || '';
+                const resp = await fetch(`${base}/api/materials/download?id=${m.materialId}`, { credentials: 'include' });
+                if (!resp.ok) throw new Error('Failed');
+                const json = await resp.json();
+                const signedUrl = json.data?.url;
+                if (!signedUrl) throw new Error('No URL');
+                // Fetch file from signed URL and open as PDF
+                const fileResp = await fetch(signedUrl);
+                if (!fileResp.ok) throw new Error('File fetch failed');
+                const blob = await fileResp.blob();
+                const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+                window.open(URL.createObjectURL(pdfBlob), '_blank');
+              } catch { toast.error('Failed to load file'); }
             }}>
               <Eye className="h-3.5 w-3.5" /> View
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => {
-              if (m.filePath && m.filePath.startsWith('http')) {
-                // For download, add fl_attachment to Cloudinary URL
-                const url = m.filePath.includes('/raw/upload/')
-                  ? m.filePath.replace('/raw/upload/', '/raw/upload/fl_attachment/')
-                  : m.filePath;
-                window.open(url, '_blank');
-              } else {
-                toast.error('File not available');
-              }
+            <Button size="sm" variant="secondary" onClick={async () => {
+              try {
+                const base = import.meta.env.VITE_API_BASE_URL || '';
+                const resp = await fetch(`${base}/api/materials/download?id=${m.materialId}`, { credentials: 'include' });
+                if (!resp.ok) throw new Error('Failed');
+                const json = await resp.json();
+                const signedUrl = json.data?.url;
+                if (!signedUrl) throw new Error('No URL');
+                const fileResp = await fetch(signedUrl);
+                if (!fileResp.ok) throw new Error('Download failed');
+                const blob = await fileResp.blob();
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = m.fileName || 'file.pdf';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+              } catch { toast.error('Download failed'); }
             }}>
               <Download className="h-3.5 w-3.5" /> Download
             </Button>

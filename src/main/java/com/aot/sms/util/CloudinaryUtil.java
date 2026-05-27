@@ -44,10 +44,44 @@ public class CloudinaryUtil {
         Map<String, Object> result = cloudinary.uploader().upload(data, ObjectUtils.asMap(
             "public_id", "aot-sms/" + System.currentTimeMillis() + "_" + sanitize(fileName),
             "resource_type", "raw",
-            "access_mode", "public",
             "type", "upload"
         ));
         return result.get("secure_url").toString();
+    }
+
+    /**
+     * Generate a time-limited signed URL for a private raw file.
+     * This bypasses the 401 issue when Cloudinary has strict access enabled.
+     */
+    public static String getSignedUrl(String cloudinaryUrl) {
+        if (cloudinary == null || cloudinaryUrl == null) return cloudinaryUrl;
+        try {
+            // Extract public_id from URL: .../raw/upload/v123/aot-sms/filename.pdf
+            String marker = "/raw/upload/";
+            int idx = cloudinaryUrl.indexOf(marker);
+            if (idx < 0) return cloudinaryUrl;
+            String afterMarker = cloudinaryUrl.substring(idx + marker.length());
+            // Remove version prefix (v1234567/)
+            if (afterMarker.startsWith("v")) {
+                int slashIdx = afterMarker.indexOf('/');
+                if (slashIdx > 0) afterMarker = afterMarker.substring(slashIdx + 1);
+            }
+            String publicId = afterMarker; // e.g. "aot-sms/1779885750058_QB_CA3_PCC-CS404.pdf"
+
+            long expiry = System.currentTimeMillis() / 1000 + 3600; // 1 hour
+            String signed = cloudinary.url()
+                .resourceType("raw")
+                .type("upload")
+                .signed(true)
+                .generate(publicId);
+            // Add expiry
+            if (signed != null && signed.contains("?")) {
+                signed += "&expires_at=" + expiry;
+            }
+            return signed != null ? signed : cloudinaryUrl;
+        } catch (Exception e) {
+            return cloudinaryUrl;
+        }
     }
 
     /** Upload raw bytes and return the secure URL. */

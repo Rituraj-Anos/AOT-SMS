@@ -279,12 +279,24 @@ function SubmissionsSheet({ material, open, onOpenChange }:
                 {s.fileName && <span className="ml-2">· 📎 {s.fileName}</span>}
               </div>
               {s.fileName && (
-                <Button size="sm" variant="secondary" className="mb-2" onClick={() => {
-                  if (s.filePath && s.filePath.startsWith('http')) {
-                    window.open(s.filePath, '_blank');
-                  } else {
-                    toast.error('File not available');
-                  }
+                <Button size="sm" variant="secondary" className="mb-2" onClick={async () => {
+                  try {
+                    const base = import.meta.env.VITE_API_BASE_URL || '';
+                    const resp = await fetch(`${base}/api/submissions/download?id=${s.submissionId}`, { credentials: 'include' });
+                    if (!resp.ok) throw new Error('Failed');
+                    const json = await resp.json();
+                    const signedUrl = json.data?.url;
+                    if (!signedUrl) throw new Error('No URL');
+                    const fileResp = await fetch(signedUrl);
+                    if (!fileResp.ok) throw new Error('Download failed');
+                    const blob = await fileResp.blob();
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = s.fileName || 'submission';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                  } catch { toast.error('Download failed'); }
                 }}>
                   <Download className="h-3.5 w-3.5" /> Download File
                 </Button>

@@ -157,9 +157,9 @@ public class SubmissionServlet extends HttpServlet {
 
             String filePath = (String) sub.get("filePath");
 
-            // Cloudinary URL — redirect
             if (filePath.startsWith("http")) {
-                resp.sendRedirect(filePath);
+                String signedUrl = CloudinaryUtil.getSignedUrl(filePath);
+                HttpUtil.writeOk(resp, java.util.Map.of("url", signedUrl, "fileName", sub.getOrDefault("fileName", "file")));
                 return;
             }
 
