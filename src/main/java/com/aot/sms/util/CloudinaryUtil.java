@@ -40,7 +40,9 @@ public class CloudinaryUtil {
     @SuppressWarnings("unchecked")
     public static String uploadFile(InputStream fileStream, String fileName) throws Exception {
         if (cloudinary == null) throw new IllegalStateException("Cloudinary not configured");
-        Map<String, Object> result = cloudinary.uploader().upload(fileStream, ObjectUtils.asMap(
+        // Cloudinary requires byte[] not InputStream
+        byte[] data = fileStream.readAllBytes();
+        Map<String, Object> result = cloudinary.uploader().upload(data, ObjectUtils.asMap(
             "public_id", "aot-sms/" + System.currentTimeMillis() + "_" + sanitize(fileName),
             "resource_type", "auto"
         ));
