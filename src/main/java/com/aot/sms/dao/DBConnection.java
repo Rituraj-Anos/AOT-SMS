@@ -30,7 +30,8 @@ public class DBConnection {
 
     static {
         String base = "jdbc:mysql://" + HOST + ":" + PORT + "/" + NAME
-                    + "?allowPublicKeyRetrieval=true&serverTimezone=Asia/Kolkata";
+                    + "?allowPublicKeyRetrieval=true&serverTimezone=Asia/Kolkata"
+                    + "&connectTimeout=10000&socketTimeout=30000&autoReconnect=true";
         if (SSL) {
             base += "&useSSL=true&requireSSL=true";
         } else {
@@ -46,11 +47,22 @@ public class DBConnection {
     }
 
     /**
-     * Returns a new connection to the database.
+     * Returns a new connection to the database with retry on failure.
      * Callers are responsible for closing the connection (use try-with-resources).
      */
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASS);
+        SQLException lastEx = null;
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            try {
+                return DriverManager.getConnection(URL, USER, PASS);
+            } catch (SQLException e) {
+                lastEx = e;
+                if (attempt < 3) {
+                    try { Thread.sleep(1000 * attempt); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+                }
+            }
+        }
+        throw lastEx;
     }
 
     private static String env(String key, String fallback) {
