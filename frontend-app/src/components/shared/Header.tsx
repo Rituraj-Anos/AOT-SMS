@@ -30,18 +30,16 @@ export function Header() {
 
   // Fetch recent materials (for students/teachers)
   const materials = useQuery({
-    queryKey: ['notifications-materials'],
-    enabled: me?.role !== 'admin',
+    queryKey: ['notifications-materials', me?.role, me?.entityId, me?.deptId],
+    enabled: !!me,
     queryFn: async () => {
-      if (!me?.entityId) return [];
-      if (me.role === 'teacher') {
-        const r = await api.get<ApiResponse<StudyMaterial[]>>('/materials', {
-          params: { all: 1 },
-        });
-        return (r.data.data ?? []).slice(0, 3);
-      }
-      // Student: get from first subject
-      return [];
+      if (!me) return [];
+      // For all roles: fetch recent materials for their dept
+      const r = await api.get<ApiResponse<StudyMaterial[]>>('/materials', {
+        params: { all: 1, deptId: me.deptId },
+      });
+      // Return most recent 5
+      return (r.data.data ?? []).slice(0, 5);
     },
     staleTime: 60_000,
   });
@@ -128,7 +126,7 @@ export function Header() {
                   onClick={() => {
                     setNotifOpen(false);
                     const path = me?.role === 'teacher' ? '/teacher/classroom' : '/student/classroom';
-                    navigate(path);
+                    navigate(`${path}?subject=${m.subjectId}`);
                   }}
                   className="w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors"
                 >
@@ -137,10 +135,10 @@ export function Header() {
                     <div className="min-w-0">
                       <div className="text-sm font-semibold truncate">{m.title}</div>
                       <div className="text-xs text-muted-foreground">
-                        {m.materialType} · by {m.teacherName}
+                        {m.subjectCode ?? m.materialType} · by {m.teacherName ?? 'Teacher'}
                       </div>
                       <div className="text-[10px] text-muted-foreground mt-0.5">
-                        {m.postedAt?.slice(0, 10)} · Classroom
+                        {m.postedAt?.slice(0, 10)} · New in Classroom
                       </div>
                     </div>
                   </div>

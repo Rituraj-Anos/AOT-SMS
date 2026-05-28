@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   FileText, Download, Loader2, Pin, Calendar, Paperclip, Upload, CheckCircle2, MessageCircle, Eye,
@@ -34,6 +35,13 @@ export default function StudentClassroom() {
   const [typeFilter, setTypeFilter] = useState<MaterialType | 'all'>('all');
   const [submitTarget, setSubmitTarget] = useState<StudyMaterial | null>(null);
   const [commentTarget, setCommentTarget] = useState<StudyMaterial | null>(null);
+  const [searchParams] = useSearchParams();
+
+  // Auto-select subject from notification link (?subject=X)
+  useEffect(() => {
+    const subjectParam = searchParams.get('subject');
+    if (subjectParam) setActiveSubject(Number(subjectParam));
+  }, [searchParams]);
 
   const firstSubject = subjects.data?.[0]?.subjectId;
   const currentSubject = activeSubject ?? firstSubject;
