@@ -5,7 +5,7 @@
 
 const num = (v: number | null | undefined) => (v == null || Number.isNaN(v) ? 0 : Number(v));
 
-/** Average of the top 2 of 4 CTs. CTs are typically out of 20. Returns raw average. */
+/** Average of the top 2 of 4 CTs. CTs are out of 25. Returns raw average (max 25). */
 export function calcBestTwo(
   ct1?: number | null,
   ct2?: number | null,
@@ -16,9 +16,9 @@ export function calcBestTwo(
   return Math.round(((arr[0] + arr[1]) / 2) * 100) / 100;
 }
 
-/** Best-2 raw average (out of 20) scaled to /25. */
+/** Best-2 raw average scaled to /25. CAs are out of 25, so best2 IS already out of 25. */
 export function scaleBestTwoTo25(best2Raw: number): number {
-  return Math.round(best2Raw * 1.25 * 100) / 100;
+  return Math.round(best2Raw * 100) / 100;
 }
 
 /** Attendance marks — same step function as backend. */

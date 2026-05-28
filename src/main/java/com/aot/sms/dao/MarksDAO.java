@@ -85,7 +85,7 @@ public class MarksDAO {
                 }
                 if (scores.size() < 2) return false;
                 scores.sort((a, b) -> Double.compare(b, a));
-                double bestTwo = ((scores.get(0) + scores.get(1)) / 40.0) * 25.0;
+                double bestTwo = ((scores.get(0) + scores.get(1)) / 50.0) * 25.0;
                 String upd = "UPDATE marks SET best_two_marks=? WHERE student_id=? AND subject_id=? AND semester=?";
                 try (PreparedStatement ps2 = conn.prepareStatement(upd)) {
                     ps2.setDouble(1, bestTwo); ps2.setInt(2, studentId);
